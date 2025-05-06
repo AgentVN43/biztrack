@@ -19,7 +19,7 @@ exports.getAllUsers = (req, res, next) => {
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
     
-    const query = 'SELECT id, username, email, created_at FROM users LIMIT ? OFFSET ?';
+    const query = 'SELECT user_id, username, email, created_at FROM users LIMIT ? OFFSET ?';
     
     db.query(query, [limit, offset], (err, results) => {
       if (err) {
@@ -69,7 +69,7 @@ exports.getUserById = (req, res, next) => {
       });
     }
     
-    db.query('SELECT id, username, email, created_at FROM users WHERE id = ?', [userId], (err, results) => {
+    db.query('SELECT user_id, username, email, created_at FROM users WHERE user_id = ?', [userId], (err, results) => {
       if (err) {
         return next(err);
       }
@@ -102,7 +102,7 @@ exports.createUser = (req, res, next) => {
     const { username, email, password } = req.body;
     
     // Check for duplicate email
-    db.query('SELECT id FROM users WHERE email = ?', [email], (err, results) => {
+    db.query('SELECT user_id FROM users WHERE email = ?', [email], (err, results) => {
       if (err) {
         return next(err);
       }
@@ -115,7 +115,7 @@ exports.createUser = (req, res, next) => {
       }
       
       // Insert new user
-      const query = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
+      const query = 'INSERT INTO users (user_id, username, email, password) VALUES (UUID(), ?, ?, ?)';
       db.query(query, [username, email, password], (err, result) => {
         if (err) {
           return next(err);
@@ -125,7 +125,7 @@ exports.createUser = (req, res, next) => {
           success: true,
           message: 'User created successfully',
           data: {
-            id: result.insertId,
+            id: result.insertId || null,
             username,
             email
           }
@@ -149,7 +149,7 @@ exports.updateUser = (req, res, next) => {
     const { username, email } = req.body;
     
     // Check if user exists
-    db.query('SELECT id FROM users WHERE id = ?', [userId], (err, results) => {
+    db.query('SELECT user_id FROM users WHERE user_id = ?', [userId], (err, results) => {
       if (err) {
         return next(err);
       }
@@ -162,7 +162,7 @@ exports.updateUser = (req, res, next) => {
       }
       
       // Update user
-      const query = 'UPDATE users SET username = ?, email = ? WHERE id = ?';
+      const query = 'UPDATE users SET username = ?, email = ? WHERE user_id = ?';
       db.query(query, [username, email, userId], (err) => {
         if (err) {
           return next(err);
@@ -195,7 +195,7 @@ exports.deleteUser = (req, res, next) => {
     const userId = req.params.id;
     
     // Check if user exists
-    db.query('SELECT id FROM users WHERE id = ?', [userId], (err, results) => {
+    db.query('SELECT user_id FROM users WHERE user_id = ?', [userId], (err, results) => {
       if (err) {
         return next(err);
       }
@@ -208,7 +208,7 @@ exports.deleteUser = (req, res, next) => {
       }
       
       // Delete user
-      db.query('DELETE FROM users WHERE id = ?', [userId], (err) => {
+      db.query('DELETE FROM users WHERE user_id = ?', [userId], (err) => {
         if (err) {
           return next(err);
         }

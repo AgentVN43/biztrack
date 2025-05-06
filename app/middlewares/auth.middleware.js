@@ -31,8 +31,8 @@ exports.authMiddleware = (req, res, next) => {
       }
       
       // Check if user still exists in database
-      const query = 'SELECT id, username, email, role FROM users WHERE id = ? AND status = "active"';
-      db.query(query, [decoded.id], (err, results) => {
+      const query = 'SELECT user_id, username, email, role FROM users WHERE user_id = ? AND status = "active"';
+      db.query(query, [decoded.user_id], (err, results) => {
         if (err) {
           return next(err);
         }
@@ -135,7 +135,7 @@ exports.refreshToken = (req, res) => {
         const userId = results[0].user_id;
         
         // Get user data
-        const userQuery = 'SELECT id, username, email, role FROM users WHERE id = ?';
+        const userQuery = 'SELECT user_id, username, email, role FROM users WHERE user_id = ?';
         db.query(userQuery, [userId], (err, userResults) => {
           if (err || userResults.length === 0) {
             return res.status(401).json({
@@ -148,7 +148,7 @@ exports.refreshToken = (req, res) => {
           
           // Generate new access token
           const accessToken = jwt.sign(
-            { id: user.id, role: user.role },
+            { user_id: user.user_id, role: user.role },
             process.env.JWT_SECRET || 'your_jwt_secret_key',
             { expiresIn: '1h' }
           );
@@ -157,7 +157,7 @@ exports.refreshToken = (req, res) => {
             success: true,
             accessToken,
             user: {
-              id: user.id,
+              id: user.user_id,
               username: user.username,
               email: user.email,
               role: user.role
