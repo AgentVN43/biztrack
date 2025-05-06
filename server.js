@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const port = process.env.PORT || 3008;
+require('dotenv').config({ path: '.env.local' });
 
 // Middleware
 app.use(express.json());

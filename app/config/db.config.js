@@ -1,10 +1,10 @@
 const mysql = require("mysql2"); // Using mysql2 for better compatibility
 
 const connection = mysql.createConnection({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'biztrade',
-  password: process.env.DB_PASSWORD || 'nguyenkiman',
-  database: process.env.DB_NAME || 'biztrade',
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
   // Optional: Connection pool settings
   // connectionLimit: 10,
   // queueLimit: 0
