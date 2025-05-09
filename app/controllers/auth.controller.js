@@ -131,6 +131,7 @@ exports.login = (req, res, next) => {
           res.json({
             success: true,
             accessToken,
+            refreshToken,
             user: {
               id: user.user_id,
               username: user.username,
