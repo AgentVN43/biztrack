@@ -1,5 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
-const WarehouseModel = require('../model/warehouse.model');
+const WarehouseModel = require('./warehouse.model');
 
 const WarehouseService = {
   createWarehouse: (warehouseData, callback) => {

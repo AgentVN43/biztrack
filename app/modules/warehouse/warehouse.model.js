@@ -1,4 +1,4 @@
-const db = require('../config/db.config');
+const db = require('../../config/db.config');
 
 exports.createWarehouse = (data, callback) => {
   const { warehouse_id, warehouse_name, warehouse_location, warehouse_capacity } = data;

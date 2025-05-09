@@ -1,5 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
-const warehouseModel = require('../model/warehouse.model');
+const warehouseModel = require('./warehouse.model');
 
 exports.createWarehouse = (req, res, next) => {
   const warehouse_id = uuidv4();

@@ -1,7 +1,7 @@
 const pingRoutes = require("./ping.routes");
 const authRoutes = require("./auth.routes");
 const userRoutes = require("./user.routes");
-const warehouseRoutes = require('./warehouse.route');
+const warehouseRoutes = require('../modules/warehouse/warehouse.route');
 
 module.exports = (app) => {
   // Register all routes
