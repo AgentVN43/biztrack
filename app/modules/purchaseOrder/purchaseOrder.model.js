@@ -54,7 +54,7 @@ exports.findById = (po_id, callback) => {
 };
 
 exports.findAll = (callback) => {
-  db.query("SELECT * FROM purchase_orders", callback);
+  db.query("SELECT * FROM purchase_orders ORDER BY created_at DESC", callback);
 };
 
 exports.updateStatus = (po_id, status, posted_at, callback) => {

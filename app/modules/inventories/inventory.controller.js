@@ -1,4 +1,4 @@
-const service = require('./inventory.service');
+const service = require("./inventory.service");
 
 exports.create = (req, res, next) => {
   service.createInventory(req.body, (err, result) => {
@@ -14,10 +14,9 @@ exports.update = (req, res, next) => {
 
   service.updateInventory(inventory_id, data, (err, result) => {
     if (err) return next(err);
-    res.json({ success: true, message: 'Inventory updated', data: result });
+    res.json({ success: true, message: "Inventory updated", data: result });
   });
 };
-
 
 exports.getAll = (req, res, next) => {
   service.getAllInventories((err, result) => {
@@ -29,7 +28,10 @@ exports.getAll = (req, res, next) => {
 exports.getById = (req, res, next) => {
   service.getInventoryById(req.params.id, (err, result) => {
     if (err) return next(err);
-    if (!result) return res.status(404).json({ success: false, message: 'Inventory not found' });
+    if (!result)
+      return res
+        .status(404)
+        .json({ success: false, message: "Inventory not found" });
     res.json({ success: true, data: result });
   });
 };
@@ -37,15 +39,28 @@ exports.getById = (req, res, next) => {
 exports.remove = (req, res, next) => {
   service.deleteInventory(req.params.id, (err) => {
     if (err) return next(err);
-    res.json({ success: true, message: 'Deleted successfully' });
+    res.json({ success: true, message: "Deleted successfully" });
   });
 };
-
 
 exports.getByWareHouseId = (req, res, next) => {
   service.getByWareHouseId(req.params.id, (err, result) => {
     if (err) return next(err);
-    if (!result) return res.status(404).json({ success: false, message: 'Inventory not found' });
+    if (!result)
+      return res
+        .status(404)
+        .json({ success: false, message: "Inventory not found" });
+    res.json({ success: true, data: result });
+  });
+};
+
+exports.checkAll = async (req, res) => {
+  service.getAllInventoriesByWarehouse(req.params.id, (err, result) => {
+    if (err) return next(err);
+    if (!result)
+      return res
+        .status(404)
+        .json({ success: false, message: "Inventory not found" });
     res.json({ success: true, data: result });
   });
 };

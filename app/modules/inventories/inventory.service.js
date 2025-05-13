@@ -1,18 +1,27 @@
-const { v4: uuidv4 } = require('uuid');
-const Inventory = require('./inventory.model');
+const { v4: uuidv4 } = require("uuid");
+const Inventory = require("./inventory.model");
 
 exports.createInventory = (data, callback) => {
   const inventory = {
     inventory_id: uuidv4(),
-    ...data
+    ...data,
   };
 
-  Inventory.findByProductAndWarehouse(data.product_id, data.warehouse_id, (err, existing) => {
-    if (err) return callback(err);
-    if (existing) return callback(new Error('Inventory already exists for this product in the warehouse'));
+  Inventory.findByProductAndWarehouse(
+    data.product_id,
+    data.warehouse_id,
+    (err, existing) => {
+      if (err) return callback(err);
+      if (existing)
+        return callback(
+          new Error(
+            "Inventory already exists for this product in the warehouse"
+          )
+        );
 
-    Inventory.create(inventory, callback);
-  });
+      Inventory.create(inventory, callback);
+    }
+  );
 };
 
 exports.increaseQuantity = (product_id, warehouse_id, quantity, callback) => {
@@ -36,5 +45,9 @@ exports.updateInventory = (inventory_id, data, callback) => {
 };
 
 exports.getByWareHouseId = (id, callback) => {
+  Inventory.findByWareHouseId(id, callback);
+};
+
+exports.getAllInventoriesByWarehouse = async (id, callback) => {
   Inventory.findByWareHouseId(id, callback);
 };

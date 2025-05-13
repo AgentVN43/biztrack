@@ -1,7 +1,14 @@
 const db = require('../../config/db.config');
 
+// exports.findByProductAndWarehouse = (product_id, warehouse_id, callback) => {
+//   const sql = 'SELECT * FROM inventories WHERE product_id = ? AND warehouse_id = ?';
+//   db.query(sql, [product_id, warehouse_id], (err, results) => {
+//     callback(err, results && results.length ? results[0] : null);
+//   });
+// };
+
 exports.findByProductAndWarehouse = (product_id, warehouse_id, callback) => {
-  const sql = 'SELECT * FROM inventories WHERE product_id = ? AND warehouse_id = ?';
+  const sql = 'SELECT product_id, warehouse_id, SUM(quantity) AS total_quantity FROM inventories WHERE product_id = ? AND warehouse_id = ? GROUP BY product_id, warehouse_id';
   db.query(sql, [product_id, warehouse_id], (err, results) => {
     callback(err, results && results.length ? results[0] : null);
   });
@@ -45,8 +52,24 @@ exports.deleteById = (inventory_id, callback) => {
   db.query('DELETE FROM inventories WHERE inventory_id = ?', [inventory_id], callback);
 };
 
+// exports.findByWareHouseId = (warehouse_id, callback) => {
+//   db.query('SELECT * FROM inventories WHERE warehouse_id = ?', [warehouse_id], (err, results) => {
+//     callback(err, results && results.length ? results[0] : null);
+//   });
+// };
+
 exports.findByWareHouseId = (warehouse_id, callback) => {
-  db.query('SELECT * FROM inventories WHERE warehouse_id = ?', [warehouse_id], (err, results) => {
-    callback(err, results && results.length ? results[0] : null);
+  const sql = `
+    SELECT
+      i.product_id,
+      SUM(i.quantity) AS total_quantity,
+      p.product_name
+    FROM inventories i
+    JOIN products p ON i.product_id = p.product_id
+    WHERE i.warehouse_id = ?
+    GROUP BY i.product_id, p.product_name
+  `;
+  db.query(sql, [warehouse_id], (err, results) => {
+    callback(err, results);
   });
 };
