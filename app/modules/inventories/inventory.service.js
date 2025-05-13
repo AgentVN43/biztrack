@@ -6,35 +6,35 @@ exports.createInventory = (data, callback) => {
     inventory_id: uuidv4(),
     ...data
   };
-  Inventory.create(inventory, callback);
+
+  Inventory.findByProductAndWarehouse(data.product_id, data.warehouse_id, (err, existing) => {
+    if (err) return callback(err);
+    if (existing) return callback(new Error('Inventory already exists for this product in the warehouse'));
+
+    Inventory.create(inventory, callback);
+  });
 };
 
-exports.getAllInventories = Inventory.findAll;
-
-exports.getInventoryById = Inventory.findById;
-
-exports.updateInventory = (id, data, callback) => {
-  const inventory = { inventory_id: id, ...data };
-  Inventory.update(inventory, callback);
+exports.increaseQuantity = (product_id, warehouse_id, quantity, callback) => {
+  Inventory.updateQuantity(product_id, warehouse_id, quantity, callback);
 };
 
-exports.deleteInventory = Inventory.remove;
-
-exports.getInventoriesByWarehouse = (warehouseId, callback) => {
-  const query = `
-    SELECT i.*, w.warehouse_name 
-    FROM inventories i
-    JOIN warehouses w ON i.warehouse_id = w.warehouse_id
-    WHERE i.warehouse_id = ?
-  `;
-  db.query(query, [warehouseId], callback);
+exports.getAllInventories = (callback) => {
+  Inventory.findAll(callback);
 };
 
-exports.getInventorySummary = (callback) => {
-  const query = `
-    SELECT product_id, SUM(quantity) AS total_quantity
-    FROM inventories
-    GROUP BY product_id
-  `;
-  db.query(query, callback);
+exports.getInventoryById = (id, callback) => {
+  Inventory.findById(id, callback);
+};
+
+exports.deleteInventory = (id, callback) => {
+  Inventory.deleteById(id, callback);
+};
+
+exports.updateInventory = (inventory_id, data, callback) => {
+  Inventory.update(inventory_id, data, callback);
+};
+
+exports.getByWareHouseId = (id, callback) => {
+  Inventory.findByWareHouseId(id, callback);
 };
