@@ -5,7 +5,7 @@ exports.getAllProducts = (req, res, next) => {
     SELECT 
       p.product_id, p.product_name, p.product_desc, p.product_image, 
       p.product_retail_price, p.product_note, p.product_barcode, 
-      p.is_active, p.category_id, c.category_name
+      p.sku, p.is_active, p.category_id, c.category_name
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.category_id
   `, (err, results) => {
@@ -29,9 +29,9 @@ exports.createProduct = (req, res, next) => {
   const {
     product_name, product_desc, product_image,
     product_retail_price, product_note, product_barcode,
-    is_active, category_id
+    sku, is_active, category_id
   } = req.body;
-  // Kiểm tra category có tồn tại
+
   db.query('SELECT category_id FROM categories WHERE category_id = ?', [category_id], (err, result) => {
     if (err) return next(err);
     if (result.length === 0) {
@@ -41,17 +41,16 @@ exports.createProduct = (req, res, next) => {
       });
     }
 
-    // Nếu hợp lệ thì insert product
     db.query(
       `INSERT INTO products (
         product_id, product_name, product_desc, product_image,
         product_retail_price, product_note, product_barcode,
-        is_active, category_id
-      ) VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, ?)`,
+        sku, is_active, category_id
+      ) VALUES (UUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         product_name, product_desc, product_image,
         product_retail_price, product_note, product_barcode,
-        is_active, category_id
+        sku, is_active, category_id
       ],
       (err, result) => {
         if (err) return next(err);
@@ -66,10 +65,9 @@ exports.updateProduct = (req, res, next) => {
   const {
     product_name, product_desc, product_image,
     product_retail_price, product_note, product_barcode,
-    is_active, category_id
+    sku, is_active, category_id
   } = req.body;
 
-  // Kiểm tra category tồn tại
   db.query('SELECT category_id FROM categories WHERE category_id = ?', [category_id], (err, result) => {
     if (err) return next(err);
     if (result.length === 0) {
@@ -79,17 +77,16 @@ exports.updateProduct = (req, res, next) => {
       });
     }
 
-    // Nếu category tồn tại thì cập nhật
     db.query(
       `UPDATE products SET 
         product_name = ?, product_desc = ?, product_image = ?,
         product_retail_price = ?, product_note = ?, product_barcode = ?,
-        is_active = ?, category_id = ?
+        sku = ?, is_active = ?, category_id = ?
       WHERE product_id = ?`,
       [
         product_name, product_desc, product_image,
         product_retail_price, product_note, product_barcode,
-        is_active, category_id, id
+        sku, is_active, category_id, id
       ],
       (err) => {
         if (err) return next(err);
