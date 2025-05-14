@@ -1,12 +1,16 @@
 const db = require("../../config/db.config");
 
 exports.create = (
-  { po_id, supplier_name, warehouse_id, note, status },
+  { po_id, supplier_name, warehouse_id, note, status, total_amount },
   callback
 ) => {
   const sql =
-    "INSERT INTO purchase_orders (po_id, supplier_name, warehouse_id, note, status) VALUES (?, ?, ?, ?, ?)";
-  db.query(sql, [po_id, supplier_name, warehouse_id, note, status], callback);
+    "INSERT INTO purchase_orders (po_id, supplier_name, warehouse_id, note, status, total_amount) VALUES (?, ?, ?, ?, ?, ?)";
+  db.query(
+    sql,
+    [po_id, supplier_name, warehouse_id, note, status, total_amount],
+    callback
+  );
 };
 
 exports.update = (po_id, data, callback) => {
@@ -14,28 +18,33 @@ exports.update = (po_id, data, callback) => {
   const values = [];
 
   if (data.supplier_name !== undefined) {
-    fields.push('supplier_name = ?');
+    fields.push("supplier_name = ?");
     values.push(data.supplier_name);
   }
   if (data.warehouse_id !== undefined) {
-    fields.push('warehouse_id = ?');
+    fields.push("warehouse_id = ?");
     values.push(data.warehouse_id);
   }
   if (data.note !== undefined) {
-    fields.push('note = ?');
+    fields.push("note = ?");
     values.push(data.note);
   }
   if (data.status !== undefined) {
-    fields.push('status = ?');
+    fields.push("status = ?");
     values.push(data.status);
+  }
+  // Thêm điều kiện để cập nhật total_amount
+  if (data.total_amount !== undefined) {
+    fields.push("total_amount = ?");
+    values.push(data.total_amount);
   }
 
   if (fields.length === 0) {
-    return callback(new Error('No valid fields to update.'));
+    return callback(new Error("No valid fields to update."));
   }
 
   values.push(po_id);
-  const sql = `UPDATE purchase_orders SET ${fields.join(', ')} WHERE po_id = ?`;
+  const sql = `UPDATE purchase_orders SET ${fields.join(", ")} WHERE po_id = ?`;
 
   db.query(sql, values, (err, result) => {
     if (err) return callback(err);

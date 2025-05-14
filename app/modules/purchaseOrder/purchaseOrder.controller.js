@@ -9,7 +9,7 @@ exports.create = (req, res, next) => {
     paymentService
       .createPaymentOnPOCreation(
         result.po_id,
-        req.body.total_amount || 0
+        result.total_amount || 0
       ) // Lấy purchase_order_id từ result
       .then((payment) => {
         // Nếu tạo phiếu chi thành công, trả về cả thông tin PO và Payment

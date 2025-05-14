@@ -17,14 +17,28 @@ exports.update = (payment_id, data, callback) => {
     db.query('UPDATE payments SET ? WHERE payment_id = ?', [data, payment_id], callback);
 };
 
+exports.findByPOId = (po_id, callback) => {
+    db.query('SELECT * FROM payments WHERE po_id = ?', [po_id], (err, results) => {
+        if (err) {
+            return callback(err);
+        }
+        callback(null, results);
+    });
+};
+
 exports.getById = (payment_id, callback) => {
     db.query('SELECT * FROM payments WHERE payment_id = ?', [payment_id], (err, results) => {
         callback(err, results && results.length > 0 ? results[0] : null);
     });
 };
 
+
 exports.getAll = (callback) => {
-    db.query('SELECT * FROM payments', callback);
+  console.log('Model: Starting getAll payments query...');
+  db.query('SELECT * FROM payments', (err, results) => {
+    console.log('Model: getAll payments query finished.');
+    callback(err, results);
+  });
 };
 
 exports.delete = (payment_id, callback) => {
