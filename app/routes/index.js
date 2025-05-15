@@ -7,6 +7,8 @@ const warehouseRoutes = require('../modules/warehouse/warehouse.route');
 const purchaseOrderRoutes = require('../modules/purchaseOrder/purchaseOrder.routes')
 const inventoriesRoutes = require('../modules/inventories/inventory.routes')
 const paymentRoutes = require('../modules/payments/payments.routes')
+const customerRoutes = require('../modules/customers/customer.routes')
+const orderRoutes = require('../modules/orders/order.routes')
 
 module.exports = (app) => {
   // Register all routes
@@ -19,6 +21,8 @@ module.exports = (app) => {
   app.use("/api/v1/purchase-orders", purchaseOrderRoutes);
   app.use("/api/v1/inventories", inventoriesRoutes);
   app.use("/api/v1/payments", paymentRoutes);
+  app.use("/api/v1/customers", customerRoutes);
+  app.use("/api/v1/orders", orderRoutes);
 
   // Default route for non-existent endpoints
   app.use("*", (req, res) => {
