@@ -3,8 +3,8 @@ const service = require("./payments.service");
 exports.createPayment = (req, res, next) => {
   service.createPayment(req.body, (err, payment) => {
     if (err) {
-      console.error("Error creating payment:", err); // Log lỗi
-      return next(err); // Chuyển lỗi cho middleware xử lý lỗi
+      console.error("Error creating payment:", err);
+      return next(err); 
     }
     res.status(201).json({ success: true, data: payment });
   });

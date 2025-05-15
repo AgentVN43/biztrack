@@ -6,29 +6,29 @@ exports.create = (req, res, next) => {
     if (err) return next(err);
 
     // Tự động tạo phiếu chi khi Purchase Order được tạo thành công
-    paymentService
-      .createPaymentOnPOCreation(
-        result.po_id,
-        result.total_amount || 0
-      ) // Lấy purchase_order_id từ result
-      .then((payment) => {
-        // Nếu tạo phiếu chi thành công, trả về cả thông tin PO và Payment
-        res
-          .status(201)
-          .json({ success: true, data: { purchaseOrder: result, payment } });
-      })
-      .catch((paymentErr) => {
-        // Xử lý lỗi khi tạo phiếu chi (tùy chọn: có nên rollback việc tạo PO?)
-        console.error("Error creating payment:", paymentErr);
-        // Trong trường hợp này, tôi vẫn trả về PO, nhưng bạn có thể muốn trả về lỗi hoặc rollback
-        res
-          .status(201)
-          .json({
-            success: true,
+    paymentService.createPaymentOnPOCreation(
+      result.po_id,
+      result.total_amount || 0,
+      (paymentErr, payment) => {
+        // Truyền callback vào đây
+        if (paymentErr) {
+          // Xử lý lỗi khi tạo phiếu chi
+          console.error("Error creating payment:", paymentErr);
+          // *Quan trọng*:  Bạn CẦN gọi res.status và res.json ở ĐÂY để kết thúc request
+          res.status(201).json({
+            // Hoặc 500, tùy logic
+            success: true, // Có thể là false tùy vào việc bạn có muốn báo lỗi không
             data: { purchaseOrder: result, payment: null },
             message: "Purchase Order created, but Payment creation failed.",
-          }); // Thông báo cho FE biết
-      });
+          });
+        } else {
+          // Nếu tạo phiếu chi thành công, trả về cả thông tin PO và Payment
+          res
+            .status(201)
+            .json({ success: true, data: { purchaseOrder: result, payment } });
+        }
+      }
+    );
   });
 };
 
