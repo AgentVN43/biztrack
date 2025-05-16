@@ -1,6 +1,7 @@
 const OrderService = require("./order.service");
 const OrderDetailService = require("../orderDetails/orderDetail.service");
 const ReceiptService = require("../receipts/receipts.service");
+const TransactionService = require("../transactions/transaction.service");
 const { v4: uuidv4 } = require("uuid");
 
 const OrderController = {
@@ -250,9 +251,46 @@ const OrderController = {
               error: errorReceipt,
             });
           }
-          res
-            .status(201)
-            .json({ order: newOrder, receipt: newReceipt, orderDetails: [] });
+          // res
+          //   .status(201)
+          //   .json({ order: newOrder, receipt: newReceipt, orderDetails: [] });
+
+          // 4. Tạo transaction từ receipt vừa tạo
+          const transactionData = {
+            transaction_code: `TX-R-${newReceipt.receipt_code}`,
+            transaction_type: "income",
+            amount: newReceipt.amount,
+            description:
+              newReceipt.note || `Thu từ đơn hàng ${newOrder.order_id}`,
+            category: "order_receipt",
+            payment_method: newReceipt.payment_method,
+            source_type: "receipt",
+            source_id: newReceipt.receipt_id,
+          };
+
+          transactionService.createTransaction(
+            transactionData,
+            (transactionErr, transaction) => {
+              if (transactionErr) {
+                console.error(
+                  "Lỗi khi tạo transaction từ receipt:",
+                  transactionErr.message
+                );
+                // Không dừng flow nếu transaction thất bại
+              }
+
+              // Trả về kết quả cuối cùng
+              return res.status(201).json({
+                success: true,
+                data: {
+                  order: newOrder,
+                  orderDetails: createdOrderDetails,
+                  receipt: newReceipt,
+                  transaction,
+                },
+              });
+            }
+          );
         });
       }
     });
