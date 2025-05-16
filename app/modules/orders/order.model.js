@@ -132,13 +132,105 @@ const Order = {
   },
 
   read: (callback) => {
-    db.query("SELECT * FROM orders", (error, results) => {
+    const query = `
+    SELECT 
+      orders.*,
+      customers.customer_name
+    FROM orders
+    LEFT JOIN customers ON orders.customer_id = customers.customer_id
+  `;
+
+    db.query(query, (error, results) => {
       if (error) {
         return callback(error, null);
       }
-      callback(null, results);
+
+      const formattedResults = results.map((order) => ({
+        order_id: order.order_id,
+        order_code: order.order_code,
+        order_date: order.order_date,
+        order_status: order.order_status,
+        shipping_address: order.shipping_address,
+        payment_method: order.payment_method,
+        note: order.note,
+        total_amount: order.total_amount,
+        discount_amount: order.discount_amount,
+        final_amount: order.final_amount,
+        created_at: order.created_at,
+        updated_at: order.updated_at,
+        warehouse_id: order.warehouse_id,
+
+        // 👇 Gom nhóm customer vào object riêng
+        customer: {
+          customer_id: order.customer_id,
+          customer_name: order.customer_name || "Khách lẻ",
+        },
+      }));
+
+      callback(null, formattedResults);
     });
   },
+
+  // readById: (order_id, callback) => {
+  //   const query = `
+  //   SELECT
+  //     orders.order_id,
+  //     orders.order_code,
+  //     orders.order_date,
+  //     orders.order_status,
+  //     orders.total_amount,
+  //     orders.final_amount,
+  //     customers.customer_name,
+  //     customers.email,
+  //     customers.phone,
+  //     order_details.product_id,
+  //     products.product_name,
+  //     order_details.quantity,
+  //     order_details.price
+  //   FROM orders
+  //   LEFT JOIN customers ON orders.customer_id = customers.customer_id
+  //   LEFT JOIN order_details ON orders.order_id = order_details.order_id
+  //   LEFT JOIN products ON order_details.product_id = products.product_id
+  //   WHERE orders.order_id = ?
+  // `;
+
+  //   db.query(query, [order_id], (error, results) => {
+  //     if (error) {
+  //       return callback(error, null);
+  //     }
+
+  //     if (results.length === 0) {
+  //       return callback(null, null);
+  //     }
+
+  //     // Nhóm dữ liệu lại thành một object đơn hàng + mảng sản phẩm
+  //     const order = {
+  //       order_id: results[0].order_id,
+  //       order_code: results[0].order_code,
+  //       order_date: results[0].order_date,
+  //       order_status: results[0].order_status,
+  //       total_amount: results[0].total_amount,
+  //       final_amount: results[0].final_amount,
+
+  //       customer: {
+  //         customer_name: results[0].customer_name,
+  //         email: results[0].email,
+  //         phone: results[0].phone,
+  //       },
+
+  //       products: results
+  //         .filter((r) => r.product_id) // chỉ lấy những dòng có sản phẩm
+  //         .map((r) => ({
+  //           product_id: r.product_id,
+  //           product_name: r.product_name,
+  //           quantity: r.quantity,
+  //           price: r.price,
+  //         })),
+  //     };
+
+  //     callback(null, order);
+  //   });
+  // },
 
   readById: (order_id, callback) => {
     db.query(

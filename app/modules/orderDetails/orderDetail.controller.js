@@ -32,6 +32,20 @@ const OrderDetailController = {
         });
     },
 
+       getOrderDetailByOrderId: (req, res) => {
+        const { id } = req.params;
+        OrderDetailService.getOrderDetailByOrderId(id, (error, orderDetail) => {
+            if (error) {
+                return res.status(500).json({ message: 'Failed to read order detail', error });
+            }
+            if (!orderDetail) {
+                return res.status(404).json({ message: 'Order detail not found' });
+            }
+            res.status(200).json(orderDetail);
+        });
+    },
+
+
     update: (req, res) => {
         const { id } = req.params;
         OrderDetailService.update(id, req.body, (error, orderDetail) => {
