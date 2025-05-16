@@ -122,7 +122,8 @@ exports.findByWareHouseId = (warehouse_id, callback) => {
     SELECT
       i.product_id,
       SUM(i.quantity) AS total_quantity,
-      p.product_name
+      p.product_name,
+      p.product_retail_price
     FROM inventories i
     JOIN products p ON i.product_id = p.product_id
     WHERE i.warehouse_id = ?

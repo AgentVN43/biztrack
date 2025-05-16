@@ -7,22 +7,20 @@ const OrderController = {
   create: (req, res) => {
     OrderService.create(req.body, (error, order) => {
       if (error) {
-        return res
-          .status(500)
-          .json({ message: "Failed to create order", error });
+        return res.status(500).json({ success: false, error: error });
       }
-      res.status(201).json(order);
+      res.status(201).json({ success: true, data: order });
     });
   },
 
   read: (req, res) => {
-    OrderService.read((error, orders) => {
+    OrderService.read((error, order) => {
       if (error) {
         return res
           .status(500)
           .json({ message: "Failed to read orders", error });
       }
-      res.status(200).json(orders);
+      res.status(200).json({ success: true, data: order });
     });
   },
 
@@ -145,7 +143,7 @@ const OrderController = {
 
     let calculatedTotalAmount = 0;
     let calculatedDiscountAmount = orderData.discount_amount || 0; // Lấy discount từ order chính
-    console.log("calculatedDiscountAmount:",calculatedDiscountAmount)
+    console.log("calculatedDiscountAmount:", calculatedDiscountAmount);
     const detailsToCreate = [];
 
     if (orderDetails && orderDetails.length > 0) {
@@ -159,7 +157,7 @@ const OrderController = {
     const calculatedFinalAmount =
       calculatedTotalAmount - calculatedDiscountAmount;
 
-      console.log("calculatedFinalAmount:",calculatedFinalAmount)
+    console.log("calculatedFinalAmount:", calculatedFinalAmount);
 
     const orderToCreate = {
       ...orderData,
@@ -198,12 +196,10 @@ const OrderController = {
               if (completedOrderDetailCount === numberOfOrderDetails) {
                 if (errorInOrderDetail) {
                   // Xử lý lỗi nếu có lỗi khi tạo order detail (có thể rollback order nếu cần)
-                  return res
-                    .status(500)
-                    .json({
-                      message: "Failed to create some order details",
-                      error: errorInOrderDetail,
-                    });
+                  return res.status(500).json({
+                    message: "Failed to create some order details",
+                    error: errorInOrderDetail,
+                  });
                 }
 
                 // 3. Tạo receipt sau khi order và order details được tạo
@@ -220,21 +216,17 @@ const OrderController = {
                   receiptData,
                   (errorReceipt, newReceipt) => {
                     if (errorReceipt) {
-                      return res
-                        .status(500)
-                        .json({
-                          message: "Failed to create receipt",
-                          error: errorReceipt,
-                        });
+                      return res.status(500).json({
+                        message: "Failed to create receipt",
+                        error: errorReceipt,
+                      });
                     }
 
-                    res
-                      .status(201)
-                      .json({
-                        order: newOrder,
-                        orderDetails: createdOrderDetails,
-                        receipt: newReceipt,
-                      });
+                    res.status(201).json({
+                      order: newOrder,
+                      orderDetails: createdOrderDetails,
+                      receipt: newReceipt,
+                    });
                   }
                 );
               }
@@ -253,12 +245,10 @@ const OrderController = {
         };
         ReceiptService.create(receiptData, (errorReceipt, newReceipt) => {
           if (errorReceipt) {
-            return res
-              .status(500)
-              .json({
-                message: "Failed to create receipt",
-                error: errorReceipt,
-              });
+            return res.status(500).json({
+              message: "Failed to create receipt",
+              error: errorReceipt,
+            });
           }
           res
             .status(201)
