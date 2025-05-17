@@ -138,6 +138,8 @@ const Order = {
       customers.customer_name
     FROM orders
     LEFT JOIN customers ON orders.customer_id = customers.customer_id
+    ORDER BY 
+      COALESCE(updated_at, created_at) DESC
   `;
 
     db.query(query, (error, results) => {

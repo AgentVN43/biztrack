@@ -141,19 +141,25 @@ const OrderController = {
   // }
   createOrderWithDetails: (req, res) => {
     const { order: orderData, orderDetails } = req.body;
-
+    console.log(orderDetails);
+    console.log(orderData);
     let calculatedTotalAmount = 0;
-    let calculatedDiscountAmount = orderData.discount_amount || 0; // Lấy discount từ order chính
-    console.log("calculatedDiscountAmount:", calculatedDiscountAmount);
+    let calculatedDiscountAmount = 0;
+
+    if (Array.isArray(orderDetails)) {
+      calculatedDiscountAmount = orderDetails.reduce(
+        (sum, detail) => sum + (detail.discount || 0),
+        0
+      );
+    }
+
     const detailsToCreate = [];
 
-    if (orderDetails && orderDetails.length > 0) {
-      orderDetails.forEach((detail) => {
-        const itemTotal = detail.price * detail.quantity;
-        calculatedTotalAmount += itemTotal;
-        detailsToCreate.push(detail);
-      });
-    }
+    orderDetails.forEach((detail) => {
+      const itemTotal = detail.price * detail.quantity;
+      calculatedTotalAmount += itemTotal;
+      detailsToCreate.push(detail); // Lưu lại dùng để tạo OrderDetail sau
+    });
 
     const calculatedFinalAmount =
       calculatedTotalAmount - calculatedDiscountAmount;
@@ -164,7 +170,10 @@ const OrderController = {
       ...orderData,
       total_amount: calculatedTotalAmount,
       final_amount: calculatedFinalAmount,
+      discount_amount: calculatedDiscountAmount
     };
+
+    console.log(orderToCreate);
 
     // 1. Tạo order
     OrderService.create(orderToCreate, (errorOrder, newOrder) => {
