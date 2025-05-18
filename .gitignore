@@ -1,0 +1,16 @@
+# Dependency directories
+/node_modules
+/npm-debug.log
+
+# Environment variables file
+.env.local
+
+# Compiled JavaScript files
+/dist
+
+# IDE and editor files
+.vscode
+.idea
+
+package-lock.json
+/assets

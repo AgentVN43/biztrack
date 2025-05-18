@@ -53,6 +53,9 @@ const OrderDetail = {
       orders.final_amount,
       orders.order_amount,
       orders.shipping_fee,
+      orders.shipping_address,
+      orders.payment_method,
+      orders.note,
       customers.customer_name,
       customers.email,
       customers.phone,
@@ -87,6 +90,9 @@ const OrderDetail = {
         final_amount: results[0].final_amount,
         order_amount: results[0].order_amount,
         shipping_fee: results[0].shipping_fee,
+        shipping_address: results[0].shipping_address,
+        payment_method: results[0].payment_method,
+        note: results[0].note,
 
         customer: {
           customer_name: results[0].customer_name,
@@ -104,6 +110,7 @@ const OrderDetail = {
             discount: parseFloat(r.discount) || 0
           })),
       };
+      console.log("🚀 ~ db.query ~ order:", order)
 
       callback(null, order);
     });
