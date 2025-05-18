@@ -51,13 +51,16 @@ const OrderDetail = {
       orders.order_status,
       orders.total_amount,
       orders.final_amount,
+      orders.order_amount,
+      orders.shipping_fee,
       customers.customer_name,
       customers.email,
       customers.phone,
       order_details.product_id,
       products.product_name,
       order_details.quantity,
-      order_details.price
+      order_details.price,
+      order_details.discount 
     FROM orders
     LEFT JOIN customers ON orders.customer_id = customers.customer_id
     LEFT JOIN order_details ON orders.order_id = order_details.order_id
@@ -82,6 +85,8 @@ const OrderDetail = {
         order_status: results[0].order_status,
         total_amount: results[0].total_amount,
         final_amount: results[0].final_amount,
+        order_amount: results[0].order_amount,
+        shipping_fee: results[0].shipping_fee,
 
         customer: {
           customer_name: results[0].customer_name,
@@ -95,7 +100,8 @@ const OrderDetail = {
             product_id: r.product_id,
             product_name: r.product_name,
             quantity: r.quantity,
-            price: r.price,
+            price: parseFloat(r.price),
+            discount: parseFloat(r.discount) || 0
           })),
       };
 

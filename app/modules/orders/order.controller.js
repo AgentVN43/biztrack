@@ -141,43 +141,56 @@ const OrderController = {
   // }
   createOrderWithDetails: (req, res) => {
     const { order: orderData, orderDetails } = req.body;
-    console.log(orderDetails);
-    console.log(orderData);
+    console.log("***This is orderData:", orderData);
     let calculatedTotalAmount = 0;
-    let calculatedDiscountAmount = 0;
+    let calculatedDiscountProductAmount = 0;
+    let calculatedDiscountOrderAmount = parseFloat(orderData.order_amount || 0);
+
+    const detailsToCreate = []; // ✅ Đã bổ sung
 
     if (Array.isArray(orderDetails)) {
-      calculatedDiscountAmount = orderDetails.reduce(
-        (sum, detail) => sum + (detail.discount || 0),
+      // Tính tổng discount từ các chi tiết sản phẩm
+      calculatedDiscountProductAmount = orderDetails.reduce(
+        (sum, detail) => sum + (parseFloat(detail.discount) || 0),
         0
       );
+
+      // Tính total_amount và push vào detailsToCreate
+      orderDetails.forEach((detail) => {
+        const itemTotal = parseFloat(detail.price) * parseInt(detail.quantity);
+        calculatedTotalAmount += itemTotal;
+        detailsToCreate.push(detail); // Lưu lại để tạo OrderDetail sau
+      });
     }
 
-    const detailsToCreate = [];
+    // Tổng giảm giá = từ sản phẩm + từ đơn
+    const calculatedDiscountAmount =
+      calculatedDiscountProductAmount + calculatedDiscountOrderAmount;
 
-    orderDetails.forEach((detail) => {
-      const itemTotal = detail.price * detail.quantity;
-      calculatedTotalAmount += itemTotal;
-      detailsToCreate.push(detail); // Lưu lại dùng để tạo OrderDetail sau
-    });
+    // Lấy shipping_fee từ orderData
+    const shippingFee = parseFloat(orderData.shipping_fee) || 0;
 
+    // Tiền cuối cùng
     const calculatedFinalAmount =
-      calculatedTotalAmount - calculatedDiscountAmount;
+      (calculatedTotalAmount - calculatedDiscountAmount) + shippingFee;
 
-    console.log("calculatedFinalAmount:", calculatedFinalAmount);
+    console.log("***This is calculatedFinalAmount:", calculatedFinalAmount);
 
     const orderToCreate = {
       ...orderData,
       total_amount: calculatedTotalAmount,
+      discount_amount: calculatedDiscountAmount,
       final_amount: calculatedFinalAmount,
-      discount_amount: calculatedDiscountAmount
+      order_amount: calculatedDiscountOrderAmount,
+      shipping_fee: shippingFee,
     };
 
-    console.log(orderToCreate);
+    console.log("orderToCreate:", orderToCreate);
 
     // 1. Tạo order
     OrderService.create(orderToCreate, (errorOrder, newOrder) => {
       if (errorOrder) {
+        console.error("Lỗi tạo order:", errorOrder);
         return res
           .status(500)
           .json({ message: "Failed to create order", error: errorOrder });
@@ -217,7 +230,9 @@ const OrderController = {
                   order_id: newOrder.order_id,
                   receipt_code: `REC-${Date.now()}`, // Ví dụ tạo mã receipt
                   receipt_date: new Date(),
-                  amount: newOrder.final_amount,
+                  // amount: newOrder.final_amount,
+                  amount: calculatedFinalAmount,
+
                   payment_method: newOrder.payment_method || "Unknown",
                   note: `Receipt for order ${newOrder.order_code}`,
                 };
@@ -249,7 +264,7 @@ const OrderController = {
           order_id: newOrder.order_id,
           receipt_code: `REC-${Date.now()}`,
           receipt_date: new Date(),
-          amount: newOrder.final_amount,
+          amount: calculatedFinalAmount,
           payment_method: newOrder.payment_method || "Unknown",
           note: `Receipt for order ${newOrder.order_code}`,
         };
@@ -277,7 +292,7 @@ const OrderController = {
             source_id: newReceipt.receipt_id,
           };
 
-          transactionService.createTransaction(
+          TransactionService.createTransaction(
             transactionData,
             (transactionErr, transaction) => {
               if (transactionErr) {

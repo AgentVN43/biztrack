@@ -48,8 +48,14 @@ const generateOrderCode = (callback) => {
 };
 
 const Order = {
-  //   create: (data, callback) => {
-  //     const order_id = uuidv4();
+  //  create: (data, callback) => {
+  //   const order_id = uuidv4();
+  //   generateOrderCode((error, order_code) => {
+  //     // Gọi hàm tạo mã đơn hàng với callback
+  //     if (error) {
+  //       // Xử lý lỗi nếu không tạo được mã đơn hàng
+  //       return callback(error, null);
+  //     }
 
   //     const {
   //       customer_id,
@@ -57,13 +63,15 @@ const Order = {
   //       total_amount,
   //       discount_amount,
   //       final_amount,
-  //       order_status,
   //       shipping_address,
+  //       shipping_fee,
   //       payment_method,
   //       note,
+  //       order_amount,
+  //       warehouse_id,
   //     } = data;
   //     db.query(
-  //       "INSERT INTO orders (order_id, customer_id, order_date, order_code, total_amount, discount_amount, final_amount, order_status, shipping_address, payment_method, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+  //       "INSERT INTO orders (order_id, customer_id, order_date, order_code, total_amount, discount_amount, final_amount, shipping_address, payment_method, note, order_amount, warehouse_id, shipping_fee) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?)",
   //       [
   //         order_id,
   //         customer_id,
@@ -72,26 +80,27 @@ const Order = {
   //         total_amount || 0,
   //         discount_amount || 0,
   //         final_amount || 0,
-  //         order_status,
   //         shipping_address,
   //         payment_method,
   //         note,
+  //         order_amount,
+  //         warehouse_id,
+  //         shipping_fee || 0,
   //       ],
   //       (error, results) => {
   //         if (error) {
   //           return callback(error, null, order_id);
   //         }
-  //         callback(null, { order_id, ...data });
+  //         callback(null, { order_id, order_code, ...data }); // Trả về order_code
   //       }
   //     );
-  //   },
+  //   });
+  // },
 
   create: (data, callback) => {
     const order_id = uuidv4();
     generateOrderCode((error, order_code) => {
-      // Gọi hàm tạo mã đơn hàng với callback
       if (error) {
-        // Xử lý lỗi nếu không tạo được mã đơn hàng
         return callback(error, null);
       }
 
@@ -101,13 +110,36 @@ const Order = {
         total_amount,
         discount_amount,
         final_amount,
-        order_status,
         shipping_address,
         payment_method,
         note,
+        order_amount,
+        warehouse_id,
+        shipping_fee,
       } = data;
+
+      // Mặc định các trường bắt buộc nhưng không có trong data
+      const order_status = "Mới";
+      const is_active = 1;
+
       db.query(
-        "INSERT INTO orders (order_id, customer_id, order_date, order_code, total_amount, discount_amount, final_amount, order_status, shipping_address, payment_method, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        `INSERT INTO orders (
+        order_id,
+        customer_id,
+        order_date,
+        order_code,
+        total_amount,
+        discount_amount,
+        final_amount,
+        order_status,
+        is_active,
+        shipping_address,
+        payment_method,
+        note,
+        warehouse_id,
+        order_amount,
+        shipping_fee
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           order_id,
           customer_id,
@@ -117,15 +149,24 @@ const Order = {
           discount_amount || 0,
           final_amount || 0,
           order_status,
+          is_active,
           shipping_address,
           payment_method,
-          note,
+          note || null,
+          warehouse_id || null,
+          order_amount || 0,
+          shipping_fee || 0,
         ],
         (error, results) => {
           if (error) {
-            return callback(error, null, order_id);
+            return callback(error, null);
           }
-          callback(null, { order_id, order_code, ...data }); // Trả về order_code
+
+          callback(null, {
+            order_id,
+            order_code,
+            ...data,
+          });
         }
       );
     });
@@ -154,6 +195,7 @@ const Order = {
         order_date: order.order_date,
         order_status: order.order_status,
         shipping_address: order.shipping_address,
+        shipping_fee: order.shipping_fee,
         payment_method: order.payment_method,
         note: order.note,
         total_amount: order.total_amount,
@@ -162,7 +204,7 @@ const Order = {
         created_at: order.created_at,
         updated_at: order.updated_at,
         warehouse_id: order.warehouse_id,
-
+        shipping_fee: order.shipping_fee,
         // 👇 Gom nhóm customer vào object riêng
         customer: {
           customer_id: order.customer_id,
