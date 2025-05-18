@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Logs
 logs
 *.log
@@ -22,3 +23,21 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+=======
+# Dependency directories
+/node_modules
+/npm-debug.log
+
+# Environment variables file
+.env.local
+
+# Compiled JavaScript files
+/dist
+
+# IDE and editor files
+.vscode
+.idea
+
+package-lock.json
+/assets
+>>>>>>> a24894b22670dc084095dec7aa0cca1dcc3b894c

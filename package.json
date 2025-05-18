@@ -4,7 +4,8 @@
     "description": "Private warehouse",
     "main": "index.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "dev": "nodemon --exec server.js"
     },
     "author": "",
     "license": "ISC",
@@ -21,5 +22,8 @@
         "mysql": "^2.18.1",
         "mysql2": "^3.14.1",
         "uuid": "^10.0.0"
+    },
+    "devDependencies": {
+        "nodemon": "^3.1.10"
     }
 }
