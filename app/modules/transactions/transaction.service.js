@@ -37,10 +37,26 @@ const deleteTransactionById = (id, callback) => {
   });
 };
 
+const confirmPayment = (order_id, callback) => {
+  TransactionModel.confirmPayment(order_id, (err, result) => {
+    if (err) return callback(err);
+    callback(null, result);
+  });
+};
+
+const markAsCancelled = (order_id, callback) => {
+  TransactionModel.markAsCancelled(order_id, (err, result) => {
+    if (err) return callback(err);
+    callback(null, result);
+  });
+};
+
 module.exports = {
   createTransaction,
   getAllTransactions,
   getTransactionById,
   updateTransactionById,
   deleteTransactionById,
+  confirmPayment,
+  markAsCancelled,
 };

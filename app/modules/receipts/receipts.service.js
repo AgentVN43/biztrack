@@ -42,6 +42,14 @@ const ReceiptService = {
   delete: (receipt_id, callback) => {
     ReceiptModel.delete(receipt_id, callback);
   },
+
+  markAsCancelled: (order_id, callback) => {
+    ReceiptModel.markAsCancelled(order_id, callback);
+  },
+
+  markAsPaid: (order_id, callback) => {
+    ReceiptModel.markAsPaid(order_id, callback);
+  },
 };
 
 module.exports = ReceiptService;

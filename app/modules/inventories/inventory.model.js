@@ -20,13 +20,17 @@ exports.create = (
   callback
 ) => {
   const sql =
-    "INSERT INTO inventories (inventory_id, product_id, warehouse_id, quantity) VALUES (?, ?, ?, ?)";
-  db.query(sql, [inventory_id, product_id, warehouse_id, quantity], callback);
+    "INSERT INTO inventories (inventory_id, product_id, warehouse_id, quantity, available_stock ) VALUES (?, ?, ?, ?, ?)";
+  db.query(sql, [inventory_id, product_id, warehouse_id, quantity, quantity], callback);
 };
 
 exports.update = (product_id, warehouse_id, quantity, callback) => {
-  const sql =
-    "UPDATE inventories SET quantity = quantity + ? WHERE product_id = ? AND warehouse_id = ?";
+  const sql = `UPDATE inventories
+    SET 
+      quantity = quantity + ?, 
+      available_stock = available_stock + ?, 
+      updated_at = CURRENT_TIMESTAMP
+    WHERE product_id = ? AND warehouse_id = ?`;
   console.log("[Inventory.update] SQL:", sql);
   console.log("[Inventory.update] Params:", quantity, product_id, warehouse_id);
 
@@ -39,9 +43,13 @@ exports.update = (product_id, warehouse_id, quantity, callback) => {
 };
 
 exports.updateQuantity = (product_id, warehouse_id, quantity, callback) => {
-  const sql =
-    "UPDATE inventories SET quantity = quantity + ? WHERE product_id = ? AND warehouse_id = ?";
-  db.query(sql, [quantity, product_id, warehouse_id], callback);
+  const sql = `UPDATE inventories
+    SET 
+      quantity = quantity + ?, 
+      available_stock = available_stock + ?, 
+      updated_at = CURRENT_TIMESTAMP
+    WHERE product_id = ? AND warehouse_id = ?`;
+  db.query(sql, [quantity, quantity, product_id, warehouse_id], callback);
 };
 
 // exports.findAll = (callback) => {
@@ -134,51 +142,76 @@ exports.findByWareHouseId = (warehouse_id, callback) => {
   });
 };
 
-exports.updateProductStockFields = (
-  product_id,
-  stockChange,
-  reservedChange,
-  availableChange,
-  callback
-) => {
-  const sql = `
-    UPDATE products
-    SET 
-      stock = stock + ?,
-      reserved_stock = reserved_stock + ?,
-      available_stock = available_stock + ?
-    WHERE product_id = ?
-  `;
-  db.query(
-    sql,
-    [stockChange, reservedChange, availableChange, product_id],
-    (error) => {
-      if (error) return callback(error);
-      return callback(null);
-    }
-  );
-};
-
 exports.updateReservedAndAvailable = (
   product_id,
   warehouse_id,
-  reservedChange,
+  reservedDelta,
+  availableDelta,
   callback
 ) => {
-  const sql = `
-    UPDATE inventories 
-    SET 
-      reserved_quantity = reserved_quantity + ?,
-      available_quantity = available_quantity - ?
+  const query = `
+    UPDATE inventories
+    SET
+      reserved_stock = reserved_stock + ?,
+      available_stock = available_stock + ?,
+      updated_at = CURRENT_TIMESTAMP
     WHERE product_id = ? AND warehouse_id = ?
   `;
-
   db.query(
-    sql,
-    [reservedChange, reservedChange, product_id, warehouse_id],
-    (err, result) => {
-      if (err) return callback(err);
-      callback(null, result);
-    }
+    query,
+    [reservedDelta, availableDelta, product_id, warehouse_id],
+    callback
   );
+};
+
+exports.updateQuantity = (
+  product_id,
+  warehouse_id,
+  quantityDelta,
+  callback
+) => {
+  const query = `
+    UPDATE inventories
+    SET
+      quantity = quantity + ?,
+      available_stock = available_stock + ?,
+      updated_at = CURRENT_TIMESTAMP
+    WHERE product_id = ? AND warehouse_id = ?
+  `;
+  db.query(
+    query,
+    [quantityDelta, quantityDelta, product_id, warehouse_id],
+    callback
+  );
+};
+
+// Trừ quantity và reserved_stock (xác nhận đơn hàng)
+
+exports.confirmReservation = (product_id, warehouse_id, quantity, callback) => {
+  const sql = `
+    UPDATE inventories
+    SET
+      quantity = quantity - ?,
+      reserved_stock = reserved_stock - ?,
+      available_stock = (quantity - ? - (reserved_stock - ?))
+    WHERE product_id = ? AND warehouse_id = ? AND reserved_stock >= ? AND quantity >= ?
+  `;
+
+  const values = [
+    quantity,
+    quantity,
+    quantity,
+    quantity,
+    product_id,
+    warehouse_id,
+    quantity,
+    quantity,
+  ];
+
+  db.query(sql, values, (err, result) => {
+    if (err) return callback(err);
+    if (result.affectedRows === 0)
+      return callback(new Error("Không đủ hàng trong kho hoặc hàng tạm giữ"));
+    callback(null);
+  });
 };

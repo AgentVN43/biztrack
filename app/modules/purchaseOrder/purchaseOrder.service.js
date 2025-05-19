@@ -379,49 +379,38 @@ exports.confirmPurchaseOrder = (po_id, callback) => {
             return new Promise((resolve, reject) => {
               const { product_id, quantity } = item;
 
-              // 1️⃣ Cập nhật bảng products
-              Product.updateStockFields(
+              // 2️⃣ Cập nhật bảng inventories
+              Inventory.findByProductAndWarehouse(
                 product_id,
-                quantity, // stock += quantity
-                0, // reserved_stock giữ nguyên
-                quantity, // available_stock += quantity
-                (productErr) => {
-                  if (productErr) return reject(productErr);
+                order.warehouse_id,
+                (invErr, existingInv) => {
+                  if (invErr) return reject(invErr);
 
-                  // 2️⃣ Cập nhật bảng inventories
-                  Inventory.findByProductAndWarehouse(
-                    product_id,
-                    order.warehouse_id,
-                    (invErr, existingInv) => {
-                      if (invErr) return reject(invErr);
-
-                      if (existingInv) {
-                        // Nếu đã tồn tại -> cập nhật quantity
-                        Inventory.update(
-                          product_id,
-                          order.warehouse_id,
-                          quantity,
-                          (updateErr) => {
-                            if (updateErr) return reject(updateErr);
-                            resolve();
-                          }
-                        );
-                      } else {
-                        // Nếu chưa có -> tạo mới inventory
-                        const newInv = {
-                          inventory_id: uuidv4(),
-                          product_id,
-                          warehouse_id: order.warehouse_id,
-                          quantity,
-                        };
-
-                        Inventory.create(newInv, (createErr) => {
-                          if (createErr) return reject(createErr);
-                          resolve();
-                        });
+                  if (existingInv) {
+                    // Nếu đã tồn tại -> cập nhật quantity
+                    Inventory.update(
+                      product_id,
+                      order.warehouse_id,
+                      quantity,
+                      (updateErr) => {
+                        if (updateErr) return reject(updateErr);
+                        resolve();
                       }
-                    }
-                  );
+                    );
+                  } else {
+                    // Nếu chưa có -> tạo mới inventory
+                    const newInv = {
+                      inventory_id: uuidv4(),
+                      product_id,
+                      warehouse_id: order.warehouse_id,
+                      quantity,
+                    };
+
+                    Inventory.create(newInv, (createErr) => {
+                      if (createErr) return reject(createErr);
+                      resolve();
+                    });
+                  }
                 }
               );
             });

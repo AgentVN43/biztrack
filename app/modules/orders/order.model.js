@@ -1,48 +1,81 @@
 const db = require("../../config/db.config");
 const { v4: uuidv4 } = require("uuid");
 
+// const generateOrderCode = (callback) => {
+//   const prefix = "ORD-";
+//   const timestamp = Date.now();
+//   let sequenceNumber = 1;
+
+//   // Lấy số thứ tự đơn hàng cuối cùng từ bảng orders
+//   db.query(
+//     'SELECT IFNULL(MAX(CAST(SUBSTRING_INDEX(order_code, "-", -1) AS UNSIGNED)), 0) AS last_order_sequence FROM orders WHERE order_code LIKE ?',
+//     [`${prefix}%`],
+//     (error, rows) => {
+//       // Thêm callback để xử lý kết quả truy vấn
+//       if (error) {
+//         console.error(
+//           "Lỗi khi lấy số thứ tự đơn hàng cuối cùng từ bảng orders:",
+//           error
+//         );
+//         return callback(error, null); // Gọi callback với lỗi
+//       }
+//       if (rows.length > 0 && rows[0].last_order_sequence) {
+//         sequenceNumber = rows[0].last_order_sequence + 1;
+//       }
+
+//       // Tạo mã đơn hàng
+//       const orderCode = `${prefix}${timestamp}-${String(
+//         sequenceNumber
+//       ).padStart(4, "0")}`;
+
+//       // Cập nhật số thứ tự đơn hàng cuối cùng trong bảng orders
+//       db.query(
+//         "UPDATE orders SET order_code = ? WHERE order_id = ?",
+//         [orderCode, uuidv4()], // Bạn cần có một order_id để update
+//         (updateError) => {
+//           if (updateError) {
+//             console.error(
+//               "Lỗi khi cập nhật order_code trong bảng orders:",
+//               updateError
+//             );
+//             return callback(updateError, null);
+//           }
+//           callback(null, orderCode); // Gọi callback với mã đơn hàng
+//         }
+//       );
+//     }
+//   );
+// };
+
 const generateOrderCode = (callback) => {
-  const prefix = "ORD-";
-  const timestamp = Date.now();
-  let sequenceNumber = 1;
+  const prefix = "ORD";
+  const today = new Date();
+  const dateStr = `${today.getFullYear()}${String(
+    today.getMonth() + 1
+  ).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
+  // → format YYYYMMDD
 
-  // Lấy số thứ tự đơn hàng cuối cùng từ bảng orders
+  const queryDateCondition = `order_code LIKE '${prefix}-${dateStr}%'`;
+
   db.query(
-    'SELECT IFNULL(MAX(CAST(SUBSTRING_INDEX(order_code, "-", -1) AS UNSIGNED)), 0) AS last_order_sequence FROM orders WHERE order_code LIKE ?',
-    [`${prefix}%`],
-    (error, rows) => {
-      // Thêm callback để xử lý kết quả truy vấn
+    `SELECT IFNULL(MAX(CAST(SUBSTRING_INDEX(order_code, '-', -1) AS UNSIGNED)), 0) AS last_sequence 
+     FROM orders 
+     WHERE ${queryDateCondition}`,
+    (error, results) => {
       if (error) {
-        console.error(
-          "Lỗi khi lấy số thứ tự đơn hàng cuối cùng từ bảng orders:",
-          error
-        );
-        return callback(error, null); // Gọi callback với lỗi
-      }
-      if (rows.length > 0 && rows[0].last_order_sequence) {
-        sequenceNumber = rows[0].last_order_sequence + 1;
+        return callback(error);
       }
 
-      // Tạo mã đơn hàng
-      const orderCode = `${prefix}${timestamp}-${String(
-        sequenceNumber
-      ).padStart(4, "0")}`;
+      let nextSequence = results[0]?.last_sequence
+        ? parseInt(results[0].last_sequence) + 1
+        : 1;
 
-      // Cập nhật số thứ tự đơn hàng cuối cùng trong bảng orders
-      db.query(
-        "UPDATE orders SET order_code = ? WHERE order_id = ?",
-        [orderCode, uuidv4()], // Bạn cần có một order_id để update
-        (updateError) => {
-          if (updateError) {
-            console.error(
-              "Lỗi khi cập nhật order_code trong bảng orders:",
-              updateError
-            );
-            return callback(updateError, null);
-          }
-          callback(null, orderCode); // Gọi callback với mã đơn hàng
-        }
-      );
+      // Đảm bảo số thứ tự là 5 chữ số
+      const paddedSequence = String(nextSequence).padStart(5, "0");
+
+      const orderCode = `${prefix}-${dateStr}-${paddedSequence}`;
+
+      callback(null, orderCode);
     }
   );
 };
@@ -277,18 +310,44 @@ const Order = {
   //   });
   // },
 
+  // readById: (order_id, callback) => {
+  //   db.query(
+  //     "SELECT * FROM orders WHERE order_id = ?",
+  //     [order_id],
+  //     (error, results) => {
+  //       if (error) {
+  //         return callback(error, null);
+  //       }
+  //       if (results.length === 0) {
+  //         return callback(null, null);
+  //       }
+  //       callback(null, results[0]);
+  //     }
+  //   );
+  // },
+
   readById: (order_id, callback) => {
+    // Lấy thông tin order
     db.query(
       "SELECT * FROM orders WHERE order_id = ?",
       [order_id],
-      (error, results) => {
-        if (error) {
-          return callback(error, null);
-        }
-        if (results.length === 0) {
-          return callback(null, null);
-        }
-        callback(null, results[0]);
+      (error, orderResults) => {
+        if (error) return callback(error, null);
+        if (orderResults.length === 0) return callback(null, null);
+
+        const order = orderResults[0];
+
+        // Lấy kèm order_details
+        db.query(
+          "SELECT * FROM order_details WHERE order_id = ?",
+          [order_id],
+          (detailErr, detailResults) => {
+            if (detailErr) return callback(detailErr, null);
+
+            order.order_details = detailResults || [];
+            callback(null, order);
+          }
+        );
       }
     );
   },

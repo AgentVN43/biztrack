@@ -101,6 +101,30 @@ const Receipt = {
       }
     );
   },
+
+  markAsCancelled: (order_id, callback) => {
+    const sql = `
+      UPDATE receipts 
+      SET receipt_status = 'Huỷ đơn', note = CONCAT(note, ' [Hủy đơn]'), updated_at = CURRENT_TIMESTAMP 
+      WHERE order_id = ?
+    `;
+    db.query(sql, [order_id], (err, result) => {
+      if (err) return callback(err);
+      callback(null, result);
+    });
+  },
+
+  markAsPaid: (order_id, callback) => {
+    const sql = `
+      UPDATE receipts 
+      SET receipt_status = 'Hoàn tất', updated_at = CURRENT_TIMESTAMP 
+      WHERE order_id = ?
+    `;
+    db.query(sql, [order_id], (err, result) => {
+      if (err) return callback(err);
+      callback(null, result);
+    });
+  },
 };
 
 module.exports = Receipt;

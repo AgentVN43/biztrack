@@ -1,4 +1,5 @@
 const service = require("./inventory.service");
+const { handleResult } = require("../../utils/responseHelper");
 
 exports.create = (req, res, next) => {
   service.createInventory(req.body, (err, result) => {
@@ -7,33 +8,36 @@ exports.create = (req, res, next) => {
   });
 };
 
-// inventory.controller.js
 exports.update = (req, res, next) => {
-  const inventory_id = req.params.id;
-  const data = req.body;
-
-  service.updateInventory(inventory_id, data, (err, result) => {
+  service.updateInventory(req.params.id, req.body, (err, result) => {
     if (err) return next(err);
     res.json({ success: true, message: "Inventory updated", data: result });
   });
 };
 
 exports.getAll = (req, res, next) => {
-  service.getAllInventories((err, result) => {
-    if (err) return next(err);
-    res.json({ success: true, data: result });
-  });
+  service.getAllInventories(handleResult(res, next));
 };
 
 exports.getById = (req, res, next) => {
-  service.getInventoryById(req.params.id, (err, result) => {
-    if (err) return next(err);
-    if (!result)
-      return res
-        .status(404)
-        .json({ success: false, message: "Inventory not found" });
-    res.json({ success: true, data: result });
-  });
+  service.getInventoryById(
+    req.params.id,
+    handleResult(res, next, "Inventory not found")
+  );
+};
+
+exports.getByWareHouseId = (req, res, next) => {
+  service.getByWareHouseId(
+    req.params.id,
+    handleResult(res, next, "Inventory not found")
+  );
+};
+
+exports.checkAll = (req, res, next) => {
+  service.getAllInventoriesByWarehouse(
+    req.params.id,
+    handleResult(res, next, "Inventory not found")
+  );
 };
 
 exports.remove = (req, res, next) => {
@@ -43,32 +47,13 @@ exports.remove = (req, res, next) => {
   });
 };
 
-exports.getByWareHouseId = (req, res, next) => {
-  service.getByWareHouseId(req.params.id, (err, result) => {
-    if (err) return next(err);
-    if (!result)
-      return res
-        .status(404)
-        .json({ success: false, message: "Inventory not found" });
-    res.json({ success: true, data: result });
-  });
-};
-
-exports.checkAll = async (req, res) => {
-  service.getAllInventoriesByWarehouse(req.params.id, (err, result) => {
-    if (err) return next(err);
-    if (!result)
-      return res
-        .status(404)
-        .json({ success: false, message: "Inventory not found" });
-    res.json({ success: true, data: result });
-  });
-};
+// ===============================
+// Business Logic APIs
+// ===============================
 
 // 1️⃣ Duyệt PO -> tăng tồn kho
 exports.increaseStock = (req, res, next) => {
   const { orderDetails, warehouse_id } = req.body;
-
   service.increaseStockFromPurchaseOrder(orderDetails, warehouse_id, (err) => {
     if (err) return next(err);
     res.json({ success: true, message: "Đã cập nhật tồn kho từ đơn mua" });
@@ -78,7 +63,6 @@ exports.increaseStock = (req, res, next) => {
 // 2️⃣ Tạm giữ hàng khi tạo đơn
 exports.reserveStock = (req, res, next) => {
   const { orderDetails, warehouse_id } = req.body;
-
   service.reserveStockFromOrderDetails(orderDetails, warehouse_id, (err) => {
     if (err) return next(err);
     res.json({ success: true, message: "Đã tạm giữ hàng trong tồn kho" });
@@ -88,7 +72,6 @@ exports.reserveStock = (req, res, next) => {
 // 3️⃣ Xác nhận thanh toán -> trừ thật sự tồn kho
 exports.confirmStock = (req, res, next) => {
   const { orderDetails, warehouse_id } = req.body;
-
   service.confirmStockReservation(orderDetails, warehouse_id, (err) => {
     if (err) return next(err);
     res.json({ success: true, message: "Đã xác nhận tồn kho" });
@@ -98,7 +81,6 @@ exports.confirmStock = (req, res, next) => {
 // 4️⃣ Hủy đơn -> giải phóng hàng đã giữ
 exports.releaseStock = (req, res, next) => {
   const { orderDetails, warehouse_id } = req.body;
-
   service.releaseReservedStock(orderDetails, warehouse_id, (err) => {
     if (err) return next(err);
     res.json({ success: true, message: "Đã giải phóng hàng tồn kho" });
