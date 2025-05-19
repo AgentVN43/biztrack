@@ -77,13 +77,13 @@ exports.findAll = (callback) => {
         product_name: row.product_name,
         quantity: row.quantity,
         category: row.category_id
-        ? {
-            category_id: row.category_id,
-            category_name: row.category_name,
-          }
-        : null,
+          ? {
+              category_id: row.category_id,
+              category_name: row.category_name,
+            }
+          : null,
       },
-      
+
       warehouse: {
         warehouse_id: row.warehouse_id,
         warehouse_name: row.warehouse_name,
@@ -132,4 +132,53 @@ exports.findByWareHouseId = (warehouse_id, callback) => {
   db.query(sql, [warehouse_id], (err, results) => {
     callback(err, results);
   });
+};
+
+exports.updateProductStockFields = (
+  product_id,
+  stockChange,
+  reservedChange,
+  availableChange,
+  callback
+) => {
+  const sql = `
+    UPDATE products
+    SET 
+      stock = stock + ?,
+      reserved_stock = reserved_stock + ?,
+      available_stock = available_stock + ?
+    WHERE product_id = ?
+  `;
+  db.query(
+    sql,
+    [stockChange, reservedChange, availableChange, product_id],
+    (error) => {
+      if (error) return callback(error);
+      return callback(null);
+    }
+  );
+};
+
+exports.updateReservedAndAvailable = (
+  product_id,
+  warehouse_id,
+  reservedChange,
+  callback
+) => {
+  const sql = `
+    UPDATE inventories 
+    SET 
+      reserved_quantity = reserved_quantity + ?,
+      available_quantity = available_quantity - ?
+    WHERE product_id = ? AND warehouse_id = ?
+  `;
+
+  db.query(
+    sql,
+    [reservedChange, reservedChange, product_id, warehouse_id],
+    (err, result) => {
+      if (err) return callback(err);
+      callback(null, result);
+    }
+  );
 };

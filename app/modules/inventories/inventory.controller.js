@@ -64,3 +64,43 @@ exports.checkAll = async (req, res) => {
     res.json({ success: true, data: result });
   });
 };
+
+// 1️⃣ Duyệt PO -> tăng tồn kho
+exports.increaseStock = (req, res, next) => {
+  const { orderDetails, warehouse_id } = req.body;
+
+  service.increaseStockFromPurchaseOrder(orderDetails, warehouse_id, (err) => {
+    if (err) return next(err);
+    res.json({ success: true, message: "Đã cập nhật tồn kho từ đơn mua" });
+  });
+};
+
+// 2️⃣ Tạm giữ hàng khi tạo đơn
+exports.reserveStock = (req, res, next) => {
+  const { orderDetails, warehouse_id } = req.body;
+
+  service.reserveStockFromOrderDetails(orderDetails, warehouse_id, (err) => {
+    if (err) return next(err);
+    res.json({ success: true, message: "Đã tạm giữ hàng trong tồn kho" });
+  });
+};
+
+// 3️⃣ Xác nhận thanh toán -> trừ thật sự tồn kho
+exports.confirmStock = (req, res, next) => {
+  const { orderDetails, warehouse_id } = req.body;
+
+  service.confirmStockReservation(orderDetails, warehouse_id, (err) => {
+    if (err) return next(err);
+    res.json({ success: true, message: "Đã xác nhận tồn kho" });
+  });
+};
+
+// 4️⃣ Hủy đơn -> giải phóng hàng đã giữ
+exports.releaseStock = (req, res, next) => {
+  const { orderDetails, warehouse_id } = req.body;
+
+  service.releaseReservedStock(orderDetails, warehouse_id, (err) => {
+    if (err) return next(err);
+    res.json({ success: true, message: "Đã giải phóng hàng tồn kho" });
+  });
+};

@@ -1,25 +1,25 @@
-const OrderModel = require('./order.model');
+const OrderModel = require("./order.model");
 
 const OrderService = {
-    create: (data, callback) => {
-        OrderModel.create(data, callback);
-    },
+  create: (data, callback) => {
+    OrderModel.create(data, callback);
+  },
 
-    read: (callback) => {
-        OrderModel.read(callback);
-    },
+  read: (callback) => {
+    OrderModel.read(callback);
+  },
 
-    readById: (order_id, callback) => {
-        OrderModel.readById(order_id, callback);
-    },
+  readById: (order_id, callback) => {
+    OrderModel.readById(order_id, callback);
+  },
 
-    update: (order_id, data, callback) => {
-        OrderModel.update(order_id, data, callback);
-    },
+  update: (order_id, data, callback) => {
+    OrderModel.update(order_id, data, callback);
+  },
 
-    delete: (order_id, callback) => {
-        OrderModel.delete(order_id, callback);
-    }
+  delete: (order_id, callback) => {
+    OrderModel.de, lete(order_id, callback);
+  },
 };
 
 module.exports = OrderService;

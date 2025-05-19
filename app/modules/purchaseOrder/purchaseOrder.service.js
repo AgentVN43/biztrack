@@ -3,6 +3,7 @@ const PurchaseOrder = require("./purchaseOrder.model");
 const PurchaseOrderDetail = require("./purchaseOrderDetail.model");
 const Inventory = require("../inventories/inventory.model"); // dùng chung module inventory
 const Payment = require("../payments/payments.model"); // Import model Payments
+const Product = require("../../controllers/product.controller");
 
 exports.createPurchaseOrder = (data, callback) => {
   const { supplier_name, warehouse_id, note, details } = data;
@@ -185,7 +186,7 @@ exports.updatePOWithDetails = (poId, data, details, callback) => {
 
             // Sau khi cập nhật total_amount của PO, cập nhật payment (nếu có)
             Payment.findByPOId(poId, (err, paymentResults) => {
-              console.log(paymentResults)
+              console.log(paymentResults);
               if (err) {
                 console.error("Error finding payment for PO:", err);
                 // Không return callback ở đây, tiếp tục để callback chính được gọi
@@ -281,46 +282,78 @@ exports.deletePurchaseOrder = (po_id, callback) => {
 };
 
 // exports.confirmPurchaseOrder = (po_id, callback) => {
-//   console.log("run conf")
+//   console.log("=== Running confirmPurchaseOrder ===");
+
 //   PurchaseOrder.findById(po_id, (err, order) => {
 //     if (err) return callback(err);
-//     if (!order) return callback(new Error('Purchase order not found'));
-//     if (order.status === 'posted') return callback(new Error('Already posted'));
+//     if (!order) return callback(new Error("Purchase order not found"));
+//     if (order.status === "posted") return callback(new Error("Already posted"));
 
-//     PurchaseOrderDetail.findByPOId(po_id, (err, details) => {
+//     PurchaseOrderDetail.findByPOId(po_id, async (err, details) => {
 //       if (err) return callback(err);
-//       let completed = 0;
+//       if (!details || details.length === 0)
+//         return callback(new Error("No purchase order details found"));
 
-//       for (const item of details) {
-//         Inventory.findByProductAndWarehouse(item.product_id, order.warehouse_id, (err, existingInv) => {
+//       try {
+//         // Xử lý từng detail
+//         await Promise.all(
+//           details.map((item) => {
+//             return new Promise((resolve, reject) => {
+//               Inventory.findByProductAndWarehouse(
+//                 item.product_id,
+//                 order.warehouse_id,
+//                 (err, existingInv) => {
+//                   if (err) return reject(err);
+
+//                   if (existingInv) {
+//                     console.log("🔁 Inventory exists. Calling update...");
+
+//                     Inventory.update(
+//                       item.product_id,
+//                       order.warehouse_id,
+//                       item.quantity,
+//                       (err) => {
+//                         if (err) {
+//                           console.error("❌ Inventory.update error:", err);
+//                           return callback(err);
+//                         }
+//                         console.log(
+//                           `✅ Updated inventory for ${item.product_id}`
+//                         );
+//                         resolve();
+//                       }
+//                     );
+//                   } else {
+//                     const newInv = {
+//                       inventory_id: uuidv4(),
+//                       product_id: item.product_id,
+//                       warehouse_id: order.warehouse_id,
+//                       quantity: item.quantity,
+//                     };
+//                     Inventory.create(newInv, (err) => {
+//                       if (err) return reject(err);
+//                       console.log(
+//                         `✅ Created inventory for ${item.product_id}`
+//                       );
+//                       resolve();
+//                     });
+//                   }
+//                 }
+//               );
+//             });
+//           })
+//         );
+
+//         // Khi tất cả inventory xử lý xong
+//         PurchaseOrder.updateStatus(po_id, "posted", new Date(), (err) => {
 //           if (err) return callback(err);
-
-//           const done = () => {
-//             if (++completed === details.length) {
-//               PurchaseOrder.updateStatus(po_id, 'posted', new Date(), (err) => {
-//                 if (err) return callback(err);
-//                 callback(null, { message: 'Purchase order posted and inventory updated' });
-//               });
-//             }
-//           };
-
-//           if (existingInv) {
-//             Inventory.update(item.product_id, order.warehouse_id, item.quantity, (err) => {
-//               if (err) return callback(err);
-//               done();
-//             });
-//           } else {
-//             Inventory.create({
-//               inventory_id: uuidv4(),
-//               product_id: item.product_id,
-//               warehouse_id: order.warehouse_id,
-//               quantity: item.quantity
-//             }, (err) => {
-//               if (err) return callback(err);
-//               done();
-//             });
-//           }
+//           callback(null, {
+//             message: "Purchase order posted and inventory updated",
+//           });
 //         });
+//       } catch (e) {
+//         console.error("❌ Error in inventory processing:", e);
+//         callback(e);
 //       }
 //     });
 //   });
@@ -344,52 +377,58 @@ exports.confirmPurchaseOrder = (po_id, callback) => {
         await Promise.all(
           details.map((item) => {
             return new Promise((resolve, reject) => {
-              Inventory.findByProductAndWarehouse(
-                item.product_id,
-                order.warehouse_id,
-                (err, existingInv) => {
-                  if (err) return reject(err);
+              const { product_id, quantity } = item;
 
-                  if (existingInv) {
-                    console.log("🔁 Inventory exists. Calling update...");
+              // 1️⃣ Cập nhật bảng products
+              Product.updateStockFields(
+                product_id,
+                quantity, // stock += quantity
+                0, // reserved_stock giữ nguyên
+                quantity, // available_stock += quantity
+                (productErr) => {
+                  if (productErr) return reject(productErr);
 
-                    Inventory.update(
-                      item.product_id,
-                      order.warehouse_id,
-                      item.quantity,
-                      (err) => {
-                        if (err) {
-                          console.error("❌ Inventory.update error:", err);
-                          return callback(err);
-                        }
-                        console.log(
-                          `✅ Updated inventory for ${item.product_id}`
+                  // 2️⃣ Cập nhật bảng inventories
+                  Inventory.findByProductAndWarehouse(
+                    product_id,
+                    order.warehouse_id,
+                    (invErr, existingInv) => {
+                      if (invErr) return reject(invErr);
+
+                      if (existingInv) {
+                        // Nếu đã tồn tại -> cập nhật quantity
+                        Inventory.update(
+                          product_id,
+                          order.warehouse_id,
+                          quantity,
+                          (updateErr) => {
+                            if (updateErr) return reject(updateErr);
+                            resolve();
+                          }
                         );
-                        resolve();
+                      } else {
+                        // Nếu chưa có -> tạo mới inventory
+                        const newInv = {
+                          inventory_id: uuidv4(),
+                          product_id,
+                          warehouse_id: order.warehouse_id,
+                          quantity,
+                        };
+
+                        Inventory.create(newInv, (createErr) => {
+                          if (createErr) return reject(createErr);
+                          resolve();
+                        });
                       }
-                    );
-                  } else {
-                    const newInv = {
-                      inventory_id: uuidv4(),
-                      product_id: item.product_id,
-                      warehouse_id: order.warehouse_id,
-                      quantity: item.quantity,
-                    };
-                    Inventory.create(newInv, (err) => {
-                      if (err) return reject(err);
-                      console.log(
-                        `✅ Created inventory for ${item.product_id}`
-                      );
-                      resolve();
-                    });
-                  }
+                    }
+                  );
                 }
               );
             });
           })
         );
 
-        // Khi tất cả inventory xử lý xong
+        // Khi tất cả xử lý xong
         PurchaseOrder.updateStatus(po_id, "posted", new Date(), (err) => {
           if (err) return callback(err);
           callback(null, {
