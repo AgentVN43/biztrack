@@ -293,44 +293,67 @@ const Order = {
     );
   },
 
+  // update: (order_id, data, callback) => {
+  //   const {
+  //     customer_id,
+  //     order_date,
+  //     order_code,
+  //     total_amount,
+  //     discount_amount,
+  //     final_amount,
+  //     order_status,
+  //     shipping_address,
+  //     payment_method,
+  //     note,
+  //   } = data;
+  //   db.query(
+  //     "UPDATE orders SET customer_id = ?, order_date = ?, order_code = ?, total_amount = ?, discount_amount = ?, final_amount = ?, order_status = ?, shipping_address = ?, payment_method = ?, note = ?, updated_at = CURRENT_TIMESTAMP WHERE order_id = ?",
+  //     [
+  //       customer_id,
+  //       order_date,
+  //       order_code,
+  //       total_amount,
+  //       discount_amount,
+  //       final_amount,
+  //       order_status,
+  //       shipping_address,
+  //       payment_method,
+  //       note,
+  //       order_id,
+  //     ],
+  //     (error, results) => {
+  //       if (error) {
+  //         return callback(error, null);
+  //       }
+  //       if (results.affectedRows === 0) {
+  //         return callback(null, null);
+  //       }
+  //       callback(null, { order_id, ...data });
+  //     }
+  //   );
+  // },
   update: (order_id, data, callback) => {
-    const {
-      customer_id,
-      order_date,
-      order_code,
-      total_amount,
-      discount_amount,
-      final_amount,
-      order_status,
-      shipping_address,
-      payment_method,
-      note,
-    } = data;
-    db.query(
-      "UPDATE orders SET customer_id = ?, order_date = ?, order_code = ?, total_amount = ?, discount_amount = ?, final_amount = ?, order_status = ?, shipping_address = ?, payment_method = ?, note = ?, updated_at = CURRENT_TIMESTAMP WHERE order_id = ?",
-      [
-        customer_id,
-        order_date,
-        order_code,
-        total_amount,
-        discount_amount,
-        final_amount,
-        order_status,
-        shipping_address,
-        payment_method,
-        note,
-        order_id,
-      ],
-      (error, results) => {
-        if (error) {
-          return callback(error, null);
-        }
-        if (results.affectedRows === 0) {
-          return callback(null, null);
-        }
-        callback(null, { order_id, ...data });
+    const fields = [];
+    const values = [];
+
+    for (const key in data) {
+      fields.push(`${key} = ?`);
+      values.push(data[key]);
+    }
+
+    fields.push(`updated_at = CURRENT_TIMESTAMP`);
+    const sql = `UPDATE orders SET ${fields.join(", ")} WHERE order_id = ?`;
+    values.push(order_id);
+
+    db.query(sql, values, (error, results) => {
+      if (error) {
+        return callback(error, null);
       }
-    );
+      if (results.affectedRows === 0) {
+        return callback(null, null);
+      }
+      callback(null, { order_id, ...data });
+    });
   },
 
   delete: (order_id, callback) => {
