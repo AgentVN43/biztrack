@@ -21,7 +21,11 @@ exports.create = (
 ) => {
   const sql =
     "INSERT INTO inventories (inventory_id, product_id, warehouse_id, quantity, available_stock ) VALUES (?, ?, ?, ?, ?)";
-  db.query(sql, [inventory_id, product_id, warehouse_id, quantity, quantity], callback);
+  db.query(
+    sql,
+    [inventory_id, product_id, warehouse_id, quantity, quantity],
+    callback
+  );
 };
 
 exports.update = (product_id, warehouse_id, quantity, callback) => {
@@ -31,25 +35,49 @@ exports.update = (product_id, warehouse_id, quantity, callback) => {
       available_stock = available_stock + ?, 
       updated_at = CURRENT_TIMESTAMP
     WHERE product_id = ? AND warehouse_id = ?`;
-  console.log("[Inventory.update] SQL:", sql);
-  console.log("[Inventory.update] Params:", quantity, product_id, warehouse_id);
 
-  db.query(sql, [quantity, product_id, warehouse_id], (err, result) => {
-    console.log("[Inventory.update] Callback Called");
-    if (err) console.error("[Inventory.update] Error:", err);
-    else console.log("[Inventory.update] Success:", result);
+  db.query(sql, [quantity, quantity, product_id, warehouse_id], (err, result) => {
+    if (err);
+    else;
     callback(err, result);
   });
 };
 
-exports.updateQuantity = (product_id, warehouse_id, quantity, callback) => {
-  const sql = `UPDATE inventories
-    SET 
-      quantity = quantity + ?, 
-      available_stock = available_stock + ?, 
+// exports.updateQuantity = (product_id, warehouse_id, quantity, callback) => {
+//   const sql = `UPDATE inventories
+//     SET
+//       quantity = quantity + ?,
+//       available_stock = available_stock + ?,
+//       updated_at = CURRENT_TIMESTAMP
+//     WHERE product_id = ? AND warehouse_id = ?`;
+//   db.query(sql, [quantity, product_id, warehouse_id], callback);
+// };
+
+exports.updateQuantity = (
+  product_id,
+  warehouse_id,
+  { quantityDelta = 0, reservedDelta = 0, availableDelta = 0 },
+  callback
+) => {
+  const sql = `
+    UPDATE inventories
+    SET
+      quantity = quantity + ?,
+      reserved_stock = reserved_stock + ?,
+      available_stock = available_stock + ?,
       updated_at = CURRENT_TIMESTAMP
-    WHERE product_id = ? AND warehouse_id = ?`;
-  db.query(sql, [quantity, quantity, product_id, warehouse_id], callback);
+    WHERE product_id = ? AND warehouse_id = ?
+  `;
+
+  const values = [
+    quantityDelta,
+    reservedDelta,
+    availableDelta,
+    product_id,
+    warehouse_id,
+  ];
+
+  db.query(sql, values, callback);
 };
 
 // exports.findAll = (callback) => {
@@ -214,4 +242,31 @@ exports.confirmReservation = (product_id, warehouse_id, quantity, callback) => {
       return callback(new Error("Không đủ hàng trong kho hoặc hàng tạm giữ"));
     callback(null);
   });
+};
+
+exports.updateInventoryFields = (
+  product_id,
+  warehouse_id,
+  { quantityDelta = 0, reservedDelta = 0, availableDelta = 0 },
+  callback
+) => {
+  const sql = `
+    UPDATE inventories
+    SET
+      quantity = quantity + ?,
+      reserved_stock = reserved_stock + ?,
+      available_stock = available_stock + ?,
+      updated_at = CURRENT_TIMESTAMP
+    WHERE product_id = ? AND warehouse_id = ?
+  `;
+
+  const values = [
+    quantityDelta,
+    reservedDelta,
+    availableDelta,
+    product_id,
+    warehouse_id,
+  ];
+
+  db.query(sql, values, callback);
 };

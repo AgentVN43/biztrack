@@ -49,21 +49,21 @@ exports.getAllInventoriesByWarehouse = async (id, callback) => {
   Inventory.findByWareHouseId(id, callback);
 };
 
-exports.updateProductStock = (
-  product_id,
-  stockChange,
-  reservedChange,
-  availableChange,
-  callback
-) => {
-  Product.updateStockFields(
-    product_id,
-    stockChange,
-    reservedChange,
-    availableChange,
-    callback
-  );
-};
+// exports.updateProductStock = (
+//   product_id,
+//   stockChange,
+//   reservedChange,
+//   availableChange,
+//   callback
+// ) => {
+//   Product.updateStockFields(
+//     product_id,
+//     stockChange,
+//     reservedChange,
+//     availableChange,
+//     callback
+//   );
+// };
 
 exports.increaseQuantity = (product_id, warehouse_id, quantity, callback) => {
   Inventory.updateQuantity(product_id, warehouse_id, quantity, callback);
@@ -75,41 +75,68 @@ exports.increaseStockFromPurchaseOrder = (
   callback
 ) => {
   let completed = 0;
-  orderDetails.forEach(({ product_id, quantity }) => {
+
+  if (!orderDetails || orderDetails.length === 0) {
+    return callback(new Error("Không có orderDetails"));
+  }
+
+  const updateNext = () => {
+    const { product_id, quantity } = orderDetails[completed];
+
     // Cập nhật products
-    updateProductStock(product_id, quantity, 0, quantity, (err) => {
-      if (err) return callback(err);
+    ProductModel.updateStockFields(
+      product_id,
+      quantity, // stock += quantity
+      0, // reserved_stock giữ nguyên
+      quantity, // available_stock += quantity
+      (productErr) => {
+        if (productErr) return callback(productErr);
 
-      // Cập nhật inventories
-      Inventory.findByProductAndWarehouse(
-        product_id,
-        warehouse_id,
-        (err, existing) => {
-          if (err) return callback(err);
+        // Cập nhật inventories
+        Inventory.findByProductAndWarehouse(
+          product_id,
+          warehouse_id,
+          (invErr, existing) => {
+            if (invErr) return callback(invErr);
 
-          if (existing) {
-            Inventory.updateQuantity(
-              product_id,
-              warehouse_id,
-              quantity,
-              handleCallback
-            );
-          } else {
-            Inventory.create(
-              { inventory_id: uuidv4(), product_id, warehouse_id, quantity },
-              handleCallback
-            );
+            if (existing) {
+              Inventory.updateQuantity(
+                product_id,
+                warehouse_id,
+                quantity,
+                handleCallback
+              );
+            } else {
+              Inventory.create(
+                {
+                  inventory_id: uuidv4(),
+                  product_id,
+                  warehouse_id,
+                  quantity,
+                  reserved_quantity: 0,
+                  available_quantity: quantity,
+                },
+                handleCallback
+              );
+            }
           }
-        }
-      );
-    });
+        );
+      }
+    );
+  };
 
-    function handleCallback(err) {
-      if (err) return callback(err);
-      completed++;
-      if (completed === orderDetails.length) callback(null);
+  const handleCallback = (err) => {
+    if (err) return callback(err);
+    completed++;
+
+    if (completed === orderDetails.length) {
+      return callback(null);
+    } else {
+      updateNext();
     }
-  });
+  };
+
+  updateNext();
 };
 
 // 2️⃣ Giữ tồn kho khi tạo đơn hàng
@@ -210,16 +237,11 @@ exports.confirmStockReservation = (orderDetails, warehouse_id, callback) => {
   let completed = 0;
 
   orderDetails.forEach(({ product_id, quantity }) => {
-    Inventory.confirmReservation(
-      product_id,
-      warehouse_id,
-      quantity,
-      (err) => {
-        if (err) return callback(err);
+    Inventory.confirmReservation(product_id, warehouse_id, quantity, (err) => {
+      if (err) return callback(err);
 
-        completed++;
-        if (completed === orderDetails.length) callback(null);
-      }
-    );
+      completed++;
+      if (completed === orderDetails.length) callback(null);
+    });
   });
 };
