@@ -189,7 +189,7 @@ exports.findByWareHouseId = (warehouse_id, callback) => {
       return callback(null, []);
     }
 
-    callback(null, results);
+    callback(null, { success: true, data: results });
   });
 };
 
