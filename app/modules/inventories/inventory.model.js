@@ -36,11 +36,15 @@ exports.update = (product_id, warehouse_id, quantity, callback) => {
       updated_at = CURRENT_TIMESTAMP
     WHERE product_id = ? AND warehouse_id = ?`;
 
-  db.query(sql, [quantity, quantity, product_id, warehouse_id], (err, result) => {
-    if (err);
-    else;
-    callback(err, result);
-  });
+  db.query(
+    sql,
+    [quantity, quantity, product_id, warehouse_id],
+    (err, result) => {
+      if (err);
+      else;
+      callback(err, result);
+    }
+  );
 };
 
 // exports.updateQuantity = (product_id, warehouse_id, quantity, callback) => {
@@ -157,16 +161,31 @@ exports.findByWareHouseId = (warehouse_id, callback) => {
   const sql = `
     SELECT
       i.product_id,
-      SUM(i.quantity) AS total_quantity,
       p.product_name,
-      p.product_retail_price
+      p.product_retail_price,
+      SUM(i.quantity) AS total_quantity,
+      SUM(i.available_stock) AS available_quantity,
+      SUM(i.reserved_stock) AS reserved_quantity
     FROM inventories i
     JOIN products p ON i.product_id = p.product_id
     WHERE i.warehouse_id = ?
     GROUP BY i.product_id, p.product_name
+    ORDER BY p.product_name ASC
   `;
   db.query(sql, [warehouse_id], (err, results) => {
-    callback(err, results);
+    if (err) {
+      console.error(
+        "[Inventory.findByWareHouseId] Lỗi khi truy vấn:",
+        err.message
+      );
+      return callback(err, null);
+    }
+
+    if (!results || results.length === 0) {
+      return callback(null, []);
+    }
+
+    callback(null, results);
   });
 };
 
