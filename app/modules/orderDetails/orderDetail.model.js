@@ -111,28 +111,96 @@ const OrderDetail = {
             product_name: r.product_name,
             quantity: r.quantity,
             price: parseFloat(r.price),
-            discount: parseFloat(r.discount) || 0
+            discount: parseFloat(r.discount) || 0,
           })),
       };
-      console.log("🚀 ~ db.query ~ order:", order)
+      console.log("🚀 ~ db.query ~ order:", order);
 
       callback(null, order);
     });
   },
 
-  update: (order_detail_id, data, callback) => {
-    const { order_id, product_id, quantity, price, discount } = data;
+  // update: (order_detail_id, data, callback) => {
+  //   const { order_id, product_id, quantity, price, discount } = data;
+  //   db.query(
+  //     "UPDATE order_details SET order_id = ?, product_id = ?, quantity = ?, price = ?, discount = ?, updated_at = CURRENT_TIMESTAMP WHERE order_detail_id = ?",
+  //     [order_id, product_id, quantity, price, discount, order_detail_id],
+  //     (error, results) => {
+  //       if (error) {
+  //         return callback(error, null);
+  //       }
+  //       if (results.affectedRows === 0) {
+  //         return callback(null, null);
+  //       }
+  //       callback(null, { order_detail_id, ...data });
+  //     }
+  //   );
+  // },
+
+  update: (order_id, data, callback) => {
+    const {
+      customer_id,
+      order_date,
+      total_amount,
+      discount_amount,
+      final_amount,
+      shipping_address,
+      payment_method,
+      note,
+      warehouse_id,
+      order_amount,
+      shipping_fee,
+      order_status,
+    } = data;
+
+    // Nếu order_status không được truyền vào, giữ nguyên giá trị cũ
+    const statusToUpdate = order_status || "Mới";
+
+    const sql = `
+    UPDATE orders SET
+      customer_id = ?,
+      order_date = ?,
+      total_amount = ?,
+      discount_amount = ?,
+      final_amount = ?,
+      shipping_address = ?,
+      payment_method = ?,
+      note = ?,
+      warehouse_id = ?,
+      order_amount = ?,
+      shipping_fee = ?,
+      order_status = ?,
+      updated_at = CURRENT_TIMESTAMP
+    WHERE order_id = ?
+  `;
+
     db.query(
-      "UPDATE order_details SET order_id = ?, product_id = ?, quantity = ?, price = ?, discount = ?, updated_at = CURRENT_TIMESTAMP WHERE order_detail_id = ?",
-      [order_id, product_id, quantity, price, discount, order_detail_id],
+      sql,
+      [
+        customer_id,
+        order_date,
+        total_amount || 0,
+        discount_amount || 0,
+        final_amount || 0,
+        shipping_address,
+        payment_method,
+        note || null,
+        warehouse_id || null,
+        order_amount || 0,
+        shipping_fee || 0,
+        statusToUpdate,
+        order_id,
+      ],
       (error, results) => {
-        if (error) {
-          return callback(error, null);
-        }
-        if (results.affectedRows === 0) {
-          return callback(null, null);
-        }
-        callback(null, { order_detail_id, ...data });
+        if (error) return callback(error, null);
+        if (results.affectedRows === 0) return callback(null, null); // Không tìm thấy hoặc không cập nhật gì
+
+        callback(null, {
+          order_id,
+          ...data,
+          order_status: statusToUpdate,
+          updated_at: new Date(),
+        });
       }
     );
   },
