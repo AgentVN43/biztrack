@@ -95,6 +95,8 @@ exports.findAll = (callback) => {
       i.quantity,
       i.created_at,
       i.updated_at,
+      i.reserved_stock,
+      i.available_stock,
       p.product_id,
       p.product_name,
       p.category_id, -- Lấy category_id từ bảng products
@@ -116,6 +118,8 @@ exports.findAll = (callback) => {
         product_id: row.product_id,
         product_name: row.product_name,
         quantity: row.quantity,
+        reserved_stock: row.reserved_stock,
+        available_stock: row.available_stock,
         category: row.category_id
           ? {
               category_id: row.category_id,
