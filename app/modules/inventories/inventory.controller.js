@@ -26,11 +26,28 @@ exports.getById = (req, res, next) => {
   );
 };
 
+// exports.getByWareHouseId = (req, res, next) => {
+//   service.getByWareHouseId(
+//     req.params.id,
+//     handleResult(res, next, "Inventory not found")
+//   );
+// };
+
 exports.getByWareHouseId = (req, res, next) => {
-  service.getByWareHouseId(
-    req.params.id,
-    handleResult(res, next, "Inventory not found")
-  );
+  const warehouseId = req.params.id;
+
+  service.getByWareHouseId(warehouseId, (err, results) => {
+    if (err) {
+      return next(err);
+    }
+
+    // Nếu không có dữ liệu, trả về mảng rỗng thay vì lỗi
+    if (!results || results.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    return res.status(200).json(results);
+  });
 };
 
 exports.checkAll = (req, res, next) => {
