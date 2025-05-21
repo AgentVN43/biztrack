@@ -24,6 +24,8 @@ const OrderDetailService = {
   delete: (order_detail_id, callback) => {
     OrderDetailModel.delete(order_detail_id, callback);
   },
+
+  
 };
 
 module.exports = OrderDetailService;

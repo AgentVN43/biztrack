@@ -245,3 +245,68 @@ exports.confirmStockReservation = (orderDetails, warehouse_id, callback) => {
     });
   });
 };
+
+exports.decreaseStockFromOrderDetails = (
+  orderDetails,
+  warehouse_id,
+  callback
+) => {
+  let completed = 0;
+
+  if (!orderDetails || orderDetails.length === 0) {
+    return callback(new Error("Không có sản phẩm trong đơn hàng"));
+  }
+
+  const updateNext = () => {
+    const { product_id, quantity } = orderDetails[completed];
+
+    // Giảm tồn kho: stock -= quantity
+    ProductModel.updateStockFromOrderDetails(
+      product_id,
+      -quantity, // ⚠️ Lưu ý là số âm để giảm
+      0, // reserved_stock giữ nguyên (nếu cần có thể tăng)
+      -quantity, // available_stock -= quantity
+      (productErr) => {
+        if (productErr) return callback(productErr);
+
+        // Cập nhật inventories
+        Inventory.findByProductAndWarehouse(
+          product_id,
+          warehouse_id,
+          (invErr, existing) => {
+            if (invErr) return callback(invErr);
+
+            if (existing) {
+              Inventory.updateQuantity(
+                product_id,
+                warehouse_id,
+                -quantity, // giảm tồn kho theo warehouse
+                handleCallback
+              );
+            } else {
+              // Nếu chưa có tồn kho ở kho này
+              return callback(
+                new Error(
+                  `Không tìm thấy tồn kho của sản phẩm ${product_id} tại kho ${warehouse_id}`
+                )
+              );
+            }
+          }
+        );
+      }
+    );
+  };
+
+  const handleCallback = (err) => {
+    if (err) return callback(err);
+    completed++;
+
+    if (completed === orderDetails.length) {
+      return callback(null);
+    } else {
+      updateNext();
+    }
+  };
+
+  updateNext();
+};

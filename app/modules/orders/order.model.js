@@ -131,7 +131,6 @@ const Order = {
   // },
 
   create: (data, callback) => {
-    const order_id = uuidv4();
     generateOrderCode((error, order_code) => {
       if (error) {
         return callback(error, null);
@@ -154,6 +153,7 @@ const Order = {
       // Mặc định các trường bắt buộc nhưng không có trong data
       const order_status = "Mới";
       const is_active = 1;
+      const order_id = uuidv4();
 
       db.query(
         `INSERT INTO orders (
@@ -427,6 +427,80 @@ const Order = {
       }
     );
   },
-};
 
+  updateOrderWithDetails: (orderId, orderData, orderDetails, callback) => {
+    db.beginTransaction((err) => {
+      if (err) return callback(err);
+
+      const updateOrderQuery = `
+      UPDATE orders SET
+        order_date = ?, order_code = ?, order_status = ?, total_amount = ?,
+        discount_amount = ?, final_amount = ?, shipping_address = ?,
+        payment_method = ?, note = ?, updated_at = NOW(), customer_id = ?, warehouse_id = ?, order_amount = ?, shipping_fee = ?
+      WHERE order_id = ?
+    `;
+      const orderParams = [
+        orderData.order_date,
+        orderData.order_code,
+        orderData.order_status,
+        orderData.total_amount,
+        orderData.discount_amount,
+        orderData.final_amount,
+        orderData.shipping_address,
+        orderData.payment_method,
+        orderData.note,
+        orderData.customer_id,
+        orderData.warehouse_id,
+        orderData.order_amount,
+        orderData.shipping_fee,
+        orderId,
+      ];
+
+      db.query(updateOrderQuery, orderParams, (err) => {
+        if (err) return db.rollback(() => callback(err));
+
+        const deleteDetailsQuery = `DELETE FROM order_details WHERE order_id = ?`;
+        db.query(deleteDetailsQuery, [orderId], (err) => {
+          if (err) return db.rollback(() => callback(err));
+
+          if (orderDetails.length === 0) {
+            return db.commit((err) => {
+              if (err) return db.rollback(() => callback(err));
+              callback(null, {
+                message: "Order updated without order details",
+              });
+            });
+          }
+
+          const insertDetailQuery = `
+          INSERT INTO order_details (
+            order_detail_id, order_id, product_id, quantity, price, discount, warehouse_id
+          ) VALUES ?
+        `;
+
+          const detailValues = orderDetails.map((d) => [
+            uuidv4(),
+            d.order_id,
+            d.product_id,
+            d.quantity,
+            d.price,
+            d.discount,
+            d.warehouse_id,
+          ]);
+
+          db.query(insertDetailQuery, [detailValues], (err) => {
+            if (err) return db.rollback(() => callback(err));
+
+            db.commit((err) => {
+              if (err) return db.rollback(() => callback(err));
+              callback(null, {
+                message: "Order and details updated successfully",
+              });
+            });
+          });
+        });
+      });
+    });
+  },
+};
 module.exports = Order;

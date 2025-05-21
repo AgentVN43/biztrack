@@ -4,6 +4,7 @@ const ReceiptService = require("../receipts/receipts.service");
 const TransactionService = require("../transactions/transaction.service");
 const Product = require("../../controllers/product.controller");
 const Inventory = require("../inventories/inventory.service");
+
 const { v4: uuidv4 } = require("uuid");
 
 // --- Hàm tạo receipt trong controller (tách khỏi Express) ---
@@ -36,6 +37,37 @@ function createReceiptAndRespond(order, orderDetails, paymentMethod, res) {
       receipt: newReceipt,
     });
   });
+}
+
+function calculateOrderTotals(orderDetails, orderData = {}) {
+  let calculatedTotalAmount = 0;
+  let calculatedDiscountProductAmount = 0;
+
+  const validDetails = Array.isArray(orderDetails) ? orderDetails : [];
+
+  validDetails.forEach((detail) => {
+    const price = parseFloat(detail.price) || 0;
+    const quantity = parseInt(detail.quantity) || 0;
+    const discount = parseFloat(detail.discount) || 0;
+
+    calculatedTotalAmount += price * quantity;
+    calculatedDiscountProductAmount += discount * quantity;
+  });
+
+  const orderDiscountAmount = parseFloat(orderData.order_amount || 0);
+  const totalDiscountAmount =
+    orderDiscountAmount + calculatedDiscountProductAmount;
+  const shippingFee = parseFloat(orderData.shipping_fee) || 0;
+
+  const finalAmount = calculatedTotalAmount - totalDiscountAmount + shippingFee;
+
+  return {
+    total_amount: calculatedTotalAmount,
+    discount_amount: totalDiscountAmount,
+    final_amount: finalAmount,
+    shipping_fee: shippingFee,
+    order_amount: orderDiscountAmount,
+  };
 }
 
 const OrderController = {
@@ -367,54 +399,445 @@ const OrderController = {
   //   });
   // },
 
+  // createOrderWithDetails: (req, res) => {
+  //   const { order: orderData, orderDetails } = req.body;
+
+  //   console.log("***This is orderData:", orderData);
+
+  //   // --- STEP 1: TÍNH TOÁN TỔNG TIỀN VÀ GIẢM GIÁ ---
+  //   let calculatedTotalAmount = 0;
+  //   let calculatedDiscountProductAmount = 0;
+  //   const orderDiscountAmount = parseFloat(orderData.order_amount || 0);
+
+  //   const validDetails = Array.isArray(orderDetails) ? orderDetails : [];
+
+  //   validDetails.forEach((detail) => {
+  //     const price = parseFloat(detail.price) || 0;
+  //     const quantity = parseInt(detail.quantity) || 0;
+  //     const discount = parseFloat(detail.discount) || 0;
+
+  //     calculatedTotalAmount += price * quantity;
+  //     calculatedDiscountProductAmount += discount;
+  //   });
+
+  //   const totalDiscountAmount =
+  //     orderDiscountAmount + calculatedDiscountProductAmount;
+  //   const shippingFee = parseFloat(orderData.shipping_fee) || 0;
+  //   const finalAmount =
+  //     calculatedTotalAmount - totalDiscountAmount + shippingFee;
+
+  //   const orderToCreate = {
+  //     ...orderData,
+  //     total_amount: calculatedTotalAmount,
+  //     discount_amount: totalDiscountAmount,
+  //     final_amount: finalAmount,
+  //     order_amount: orderDiscountAmount,
+  //     shipping_fee: shippingFee,
+  //   };
+
+  //   console.log("*** Final orderToCreate:", orderToCreate);
+
+  //   // --- STEP 2: TẠO ORDER ---
+  //   OrderService.create(orderToCreate, (errorOrder, newOrder) => {
+  //     if (errorOrder) {
+  //       return res
+  //         .status(500)
+  //         .json({ message: "Failed to create order", error: errorOrder });
+  //     }
+
+  //     // --- STEP 3: TẠO ORDER DETAILS ---
+  //     if (validDetails.length === 0) {
+  //       return createReceiptAndRespond(newOrder, [], null, res);
+  //     }
+
+  //     let createdDetails = [];
+  //     let errorInDetail = null;
+  //     let completedCount = 0;
+
+  //     validDetails.forEach((detail) => {
+  //       const detailData = { ...detail, order_id: newOrder.order_id };
+
+  //       OrderDetailService.create(detailData, (errorDetail, newDetail) => {
+  //         if (errorDetail) errorInDetail = errorDetail;
+  //         else createdDetails.push(newDetail);
+
+  //         completedCount++;
+
+  //         if (completedCount === validDetails.length) {
+  //           if (errorInDetail) {
+  //             return res.status(500).json({
+  //               message: "Failed to create some order details",
+  //               error: errorInDetail,
+  //             });
+  //           }
+
+  //           // --- STEP 4: TẠM GIỮ TỒN KHO ---
+  //           const warehouseId = orderData.warehouse_id || "wh_default";
+  //           Inventory.reserveStockFromOrderDetails(
+  //             validDetails,
+  //             warehouseId,
+  //             (reserveError) => {
+  //               if (reserveError) {
+  //                 console.error(
+  //                   "Lỗi khi tạm giữ tồn kho:",
+  //                   reserveError.message
+  //                 );
+  //                 // Không dừng flow
+  //               }
+
+  //               // --- STEP 5: TẠO RECEIPT ---
+  //               // createReceiptAndRespond(
+  //               //   newOrder,
+  //               //   createdDetails,
+  //               //   orderData.payment_method,
+  //               //   res
+  //               // );
+  //             }
+  //           );
+  //         }
+  //       });
+  //     });
+  //   });
+  // },
+
+  // updateOrderWithDetails: (req, res) => {
+  //   const { order: orderData, orderDetails } = req.body;
+  //   console.log("Send from FE:",orderData)
+  //   if (!orderData || !orderData.order_id) {
+  //     return res.status(400).json({ message: "Thiếu order_id" });
+  //   }
+
+  //   const orderId = orderData.order_id;
+
+  //   // --- STEP 1: LẤY ORDER HIỆN TẠI ---
+  //   OrderService.readById(orderId, (errorOrder, existingOrder) => {
+  //     if (errorOrder) {
+  //       return res.status(500).json({
+  //         message: "Không tìm thấy đơn hàng",
+  //         error: errorOrder,
+  //       });
+  //     }
+
+  //     if (!existingOrder) {
+  //       return res.status(404).json({ message: "Đơn hàng không tồn tại" });
+  //     }
+
+  //     // --- STEP 2: TÍNH TOÁN TỔNG TIỀN MỚI ---
+  //     let calculatedTotalAmount = 0;
+  //     let calculatedDiscountProductAmount = 0;
+  //     const orderDiscountAmount = parseFloat(orderData.discount_amount || 0);
+  //     const validDetails = Array.isArray(orderDetails) ? orderDetails : [];
+
+  //     validDetails.forEach((detail) => {
+  //       const price = parseFloat(detail.price) || 0;
+  //       const quantity = parseInt(detail.quantity) || 0;
+  //       const discount = parseFloat(detail.discount) || 0;
+
+  //       calculatedTotalAmount += price * quantity;
+  //       calculatedDiscountProductAmount += discount;
+  //     });
+
+  //     const totalDiscountAmount =
+  //       orderDiscountAmount + calculatedDiscountProductAmount;
+  //     const shippingFee = parseFloat(orderData.shipping_fee) || 0;
+  //     const finalAmount =
+  //       calculatedTotalAmount - totalDiscountAmount + shippingFee;
+
+  //     const updatedOrder = {
+  //       ...existingOrder,
+  //       ...orderData,
+  //       total_amount: calculatedTotalAmount,
+  //       discount_amount: totalDiscountAmount,
+  //       final_amount: finalAmount,
+  //     };
+
+  //     console.log("Cập nhật đơn hàng:", updatedOrder);
+
+  //     // --- STEP 3: CẬP NHẬT ĐƠN HÀNG ---
+  //     OrderService.update(updatedOrder.order_id, updatedOrder, (errUpdate) => {
+  //       if (errUpdate) {
+  //         return res.status(500).json({
+  //           message: "Lỗi khi cập nhật đơn hàng",
+  //           error: errUpdate,
+  //         });
+  //       }
+
+  //       // --- STEP 4: LẤY DANH SÁCH ORDER DETAIL HIỆN TẠI ---
+  //       OrderDetailService.readById(orderId, (errDetails, existingDetails) => {
+  //         if (errDetails) {
+  //           return res.status(500).json({
+  //             message: "Không thể tải chi tiết đơn hàng",
+  //             error: errDetails,
+  //           });
+  //         }
+
+  //         const existingMap = {};
+  //         (existingDetails || []).forEach(
+  //           (d) => (existingMap[d.product_id] = d)
+  //         );
+
+  //         const newMap = {};
+  //         (validDetails || []).forEach((d) => (newMap[d.product_id] = d));
+
+  //         const toDelete = existingDetails.filter((d) => !newMap[d.product_id]);
+  //         const toUpdate = existingDetails.filter((d) => newMap[d.product_id]);
+  //         const toCreate = validDetails.filter(
+  //           (d) => !existingMap[d.product_id]
+  //         );
+
+  //         let completedCount = 0;
+
+  //         // --- STEP 5: XOÁ ORDER DETAILS KHÔNG CÒN ---
+  //         const deletePromises = toDelete.map(
+  //           (detail) =>
+  //             new Promise((resolve, reject) => {
+  //               OrderDetailService.delete(detail.order_detail_id, (err) => {
+  //                 if (err) reject(err);
+  //                 else resolve();
+  //               });
+  //             })
+  //         );
+
+  //         // --- STEP 6: CẬP NHẬT ORDER DETAILS CŨ ---
+  //         const updatePromises = toUpdate.map(
+  //           (detail) =>
+  //             new Promise((resolve, reject) => {
+  //               const newData = newMap[detail.product_id];
+  //               OrderDetailService.update(
+  //                 detail.order_detail_id,
+  //                 newData,
+  //                 (err) => {
+  //                   if (err) reject(err);
+  //                   else resolve();
+  //                 }
+  //               );
+  //             })
+  //         );
+
+  //         // --- STEP 7: TẠO MỚI ORDER DETAILS MỚI ---
+  //         const createPromises = toCreate.map(
+  //           (detail) =>
+  //             new Promise((resolve, reject) => {
+  //               const detailData = {
+  //                 ...detail,
+  //                 order_id: orderId,
+  //               };
+  //               OrderDetailService.create(detailData, (err, result) => {
+  //                 if (err) reject(err);
+  //                 else resolve(result);
+  //               });
+  //             })
+  //         );
+
+  //         // --- STEP 8: CHỜ HOÀN THÀNH TẤT CẢ ---
+  //         Promise.all([...deletePromises, ...updatePromises, ...createPromises])
+  //           .then(() => {
+  //             // --- STEP 9: CẬP NHẬT TỒN KHO NẾU CẦN ---
+  //             Inventory.updateStockFromOrderDetails(
+  //               orderId,
+  //               (inventoryError) => {
+  //                 if (inventoryError) {
+  //                   console.error(
+  //                     "Lỗi cập nhật tồn kho:",
+  //                     inventoryError.message
+  //                   );
+  //                 }
+
+  //                 return res.json({
+  //                   message: "Cập nhật đơn hàng thành công",
+  //                   order: updatedOrder,
+  //                 });
+  //               }
+  //             );
+  //           })
+  //           .catch((error) => {
+  //             return res.status(500).json({
+  //               message: "Lỗi khi cập nhật chi tiết đơn hàng",
+  //               error,
+  //             });
+  //           });
+  //       });
+  //     });
+  //   });
+  // },
+
+  // updateOrderWithDetail: (req, res) => {
+  //   const { orderId } = req.params;
+  //   const { order, orderDetails } = req.body;
+
+  //   // --- BƯỚC 1: KIỂM TRA ĐẦU VÀO ---
+  //   if (!order || !order.order_id || order.order_id !== orderId) {
+  //     return res
+  //       .status(400)
+  //       .json({ message: "Dữ liệu không hợp lệ hoặc thiếu order_id" });
+  //   }
+
+  //   if (!Array.isArray(orderDetails)) {
+  //     return res.status(400).json({ message: "orderDetails phải là mảng" });
+  //   }
+
+  //   // --- BƯỚC 2: LẤY ORDER HIỆN TẠI ---
+  //   OrderService.readById(orderId, (errorOrder, existingOrder) => {
+  //     if (errorOrder) {
+  //       return res.status(500).json({
+  //         message: "Không tìm thấy đơn hàng",
+  //         error: errorOrder,
+  //       });
+  //     }
+
+  //     if (!existingOrder) {
+  //       return res.status(404).json({ message: "Đơn hàng không tồn tại" });
+  //     }
+
+  //     // --- BƯỚC 3: CHỈ GIỮ NHỮNG TRƯỜNG HỢP LỆ TRONG order ---
+  //     const validOrderFields = [
+  //       "customer_id",
+  //       "order_date",
+  //       "shipping_address",
+  //       "payment_method",
+  //       "note",
+  //       "warehouse_id",
+  //       "shipping_fee",
+  //       "order_amount",
+  //     ];
+
+  //     const filteredOrder = {};
+  //     validOrderFields.forEach((field) => {
+  //       if (order[field] !== undefined) {
+  //         filteredOrder[field] = order[field];
+  //       }
+  //     });
+
+  //     // --- BƯỚC 4: TÍNH TOÁN LẠI TỔNG TIỀN NẾU CẦN ---
+  //     let calculatedTotalAmount = 0;
+  //     let calculatedDiscountProductAmount = 0;
+
+  //     orderDetails.forEach((detail) => {
+  //       const price = parseFloat(detail.price) || 0;
+  //       const quantity = parseInt(detail.quantity) || 0;
+  //       const discount = parseFloat(detail.discount) || 0;
+
+  //       calculatedTotalAmount += price * quantity;
+  //       calculatedDiscountProductAmount += discount;
+  //     });
+
+  //     const totalDiscountAmount =
+  //       parseFloat(filteredOrder.order_amount) ||
+  //       0 + calculatedDiscountProductAmount;
+  //     const shippingFee = parseFloat(filteredOrder.shipping_fee) || 0;
+  //     const finalAmount =
+  //       calculatedTotalAmount - totalDiscountAmount + shippingFee;
+
+  //     // --- BƯỚC 5: GỘP THÔNG TIN CẦN UPDATE ---
+  //     const updatedOrder = {
+  //       ...filteredOrder,
+  //       total_amount: calculatedTotalAmount,
+  //       discount_amount: totalDiscountAmount,
+  //       final_amount: finalAmount,
+  //     };
+
+  //     // --- BƯỚC 6: CẬP NHẬT ĐƠN HÀNG ---
+  //     OrderService.update(orderId, updatedOrder, async (errUpdate) => {
+  //       if (errUpdate) {
+  //         return res.status(500).json({
+  //           message: "Lỗi khi cập nhật đơn hàng",
+  //           error: errUpdate,
+  //         });
+  //       }
+
+  //       // --- BƯỚC 7: XÓA order_details CŨ ---
+  //       OrderDetailService.deleteByOrderId(
+  //         orderId,
+  //         (errDelete, resultDelete) => {
+  //           if (errDelete) {
+  //             return res.status(500).json({
+  //               message: "Lỗi khi xóa chi tiết đơn hàng cũ",
+  //               error: errDelete,
+  //             });
+  //           }
+
+  //           // --- BƯỚC 8: THÊM MỚI order_details ---
+  //           if (orderDetails.length > 0) {
+  //             OrderDetailService.createMany(
+  //               orderId,
+  //               orderDetails,
+  //               (errCreate) => {
+  //                 if (errCreate) {
+  //                   return res.status(500).json({
+  //                     message: "Lỗi khi tạo chi tiết đơn hàng mới",
+  //                     error: errCreate,
+  //                   });
+  //                 }
+
+  //                 // --- BƯỚC 9: CẬP NHẬT TỒN KHO NẾU CẦN ---
+  //                 Inventory.decreaseStockFromOrderDetails(
+  //                   orderId,
+  //                   (inventoryError) => {
+  //                     if (inventoryError) {
+  //                       console.error(
+  //                         "Lỗi cập nhật tồn kho:",
+  //                         inventoryError.message
+  //                       );
+  //                     }
+
+  //                     return res.json({
+  //                       message: "Cập nhật đơn hàng và chi tiết thành công",
+  //                       data: {
+  //                         order: updatedOrder,
+  //                         orderDetails,
+  //                       },
+  //                     });
+  //                   }
+  //                 );
+  //               }
+  //             );
+  //           } else {
+  //             // Nếu không có chi tiết sản phẩm
+  //             return res.json({
+  //               message: "Cập nhật đơn hàng thành công (không có sản phẩm)",
+  //               data: {
+  //                 order: updatedOrder,
+  //                 orderDetails: [],
+  //               },
+  //             });
+  //           }
+  //         }
+  //       );
+  //     });
+  //   });
+  // },
+
   createOrderWithDetails: (req, res) => {
     const { order: orderData, orderDetails } = req.body;
 
     console.log("***This is orderData:", orderData);
 
-    // --- STEP 1: TÍNH TOÁN TỔNG TIỀN VÀ GIẢM GIÁ ---
-    let calculatedTotalAmount = 0;
-    let calculatedDiscountProductAmount = 0;
-    const orderDiscountAmount = parseFloat(orderData.order_amount || 0);
+    // --- STEP 1: GỌI HÀM TÍNH TOÁN ---
+    const calculated = calculateOrderTotals(orderDetails, orderData);
 
-    const validDetails = Array.isArray(orderDetails) ? orderDetails : [];
-
-    validDetails.forEach((detail) => {
-      const price = parseFloat(detail.price) || 0;
-      const quantity = parseInt(detail.quantity) || 0;
-      const discount = parseFloat(detail.discount) || 0;
-
-      calculatedTotalAmount += price * quantity;
-      calculatedDiscountProductAmount += discount;
-    });
-
-    const totalDiscountAmount =
-      orderDiscountAmount + calculatedDiscountProductAmount;
-    const shippingFee = parseFloat(orderData.shipping_fee) || 0;
-    const finalAmount =
-      calculatedTotalAmount - totalDiscountAmount + shippingFee;
-
+    // --- STEP 2: GỘP VỚI DỮ LIỆU ORDER ĐỂ TẠO MỚI ---
     const orderToCreate = {
       ...orderData,
-      total_amount: calculatedTotalAmount,
-      discount_amount: totalDiscountAmount,
-      final_amount: finalAmount,
-      order_amount: orderDiscountAmount,
-      shipping_fee: shippingFee,
+      total_amount: calculated.total_amount.toFixed(2),
+      discount_amount: calculated.discount_amount.toFixed(2),
+      final_amount: calculated.final_amount.toFixed(2),
+      order_amount: calculated.order_amount.toFixed(2),
+      shipping_fee: calculated.shipping_fee.toFixed(2),
     };
 
     console.log("*** Final orderToCreate:", orderToCreate);
 
-    // --- STEP 2: TẠO ORDER ---
+    // --- STEP 3: TẠO ORDER ---
     OrderService.create(orderToCreate, (errorOrder, newOrder) => {
       if (errorOrder) {
-        return res
-          .status(500)
-          .json({ message: "Failed to create order", error: errorOrder });
+        return res.status(500).json({
+          message: "Failed to create order",
+          error: errorOrder,
+        });
       }
 
-      // --- STEP 3: TẠO ORDER DETAILS ---
-      if (validDetails.length === 0) {
+      // --- STEP 4: TẠO ORDER DETAILS ---
+      if (!Array.isArray(orderDetails) || orderDetails.length === 0) {
         return createReceiptAndRespond(newOrder, [], null, res);
       }
 
@@ -422,7 +845,7 @@ const OrderController = {
       let errorInDetail = null;
       let completedCount = 0;
 
-      validDetails.forEach((detail) => {
+      orderDetails.forEach((detail) => {
         const detailData = { ...detail, order_id: newOrder.order_id };
 
         OrderDetailService.create(detailData, (errorDetail, newDetail) => {
@@ -431,7 +854,7 @@ const OrderController = {
 
           completedCount++;
 
-          if (completedCount === validDetails.length) {
+          if (completedCount === orderDetails.length) {
             if (errorInDetail) {
               return res.status(500).json({
                 message: "Failed to create some order details",
@@ -439,10 +862,10 @@ const OrderController = {
               });
             }
 
-            // --- STEP 4: TẠM GIỮ TỒN KHO ---
+            // --- STEP 5: TẠM GIỮ TỒN KHO ---
             const warehouseId = orderData.warehouse_id || "wh_default";
             Inventory.reserveStockFromOrderDetails(
-              validDetails,
+              orderDetails,
               warehouseId,
               (reserveError) => {
                 if (reserveError) {
@@ -453,18 +876,30 @@ const OrderController = {
                   // Không dừng flow
                 }
 
-                // --- STEP 5: TẠO RECEIPT ---
-                createReceiptAndRespond(
-                  newOrder,
-                  createdDetails,
-                  orderData.payment_method,
-                  res
-                );
+                // --- STEP 6: TẠO RECEIPT ---
+                // createReceiptAndRespond(newOrder, createdDetails, orderData.payment_method, res);
               }
             );
           }
         });
       });
+    });
+  },
+
+  updateOrderWithDetails: (req, res) => {
+    const orderId = req.params.id;
+    const orderData = req.body;
+
+    OrderService.updateOrderWithDetails(orderId, orderData, (err, result) => {
+      if (err) {
+        console.error("Error updating order:", err);
+        return res
+          .status(500)
+          .json({ message: "Failed to update order", error: err });
+      }
+      res
+        .status(200)
+        .json({ message: "Order updated successfully", data: result });
     });
   },
 };
