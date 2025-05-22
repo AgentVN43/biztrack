@@ -940,7 +940,6 @@ const OrderController = {
   updateOrderWithDetails: (req, res) => {
     const orderId = req.params.id;
     const orderData = req.body;
-
     OrderService.updateOrderWithDetails(orderId, orderData, (err, result) => {
       if (err) {
         console.error("Error updating order:", err);

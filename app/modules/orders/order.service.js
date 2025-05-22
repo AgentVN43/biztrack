@@ -34,6 +34,41 @@ function calculateOrderTotals(orderDetails, orderData = {}) {
   };
 }
 
+function filterValidOrderFields(data) {
+  const allowedFields = [
+    "customer_id",
+    "order_date",
+    "order_code",
+    "order_status",
+    "total_amount",
+    "discount_amount",
+    "final_amount",
+    "shipping_address",
+    "payment_method",
+    "note",
+    "warehouse_id",
+    "order_amount",
+    "shipping_fee",
+  ];
+
+  const result = {};
+  for (const key in data) {
+    const value = data[key];
+
+    if (
+      allowedFields.includes(key) &&
+      value !== undefined &&
+      value !== null &&
+      typeof value !== "object" &&
+      !Array.isArray(value)
+    ) {
+      result[key] = value;
+    }
+  }
+
+  return result;
+}
+
 const OrderService = {
   create: (data, callback) => {
     OrderModel.create(data, callback);
@@ -162,7 +197,7 @@ const OrderService = {
           return callback(
             err2 || new Error("Không thể đọc thông tin đơn hàng")
           );
-        console.log("***This is order:", order);
+        console.log("🚀 ~ This is order:", order);
         const orderDetails = order.order_details || [];
         const warehouse_id = order.warehouse_id || null;
 
@@ -202,11 +237,11 @@ const OrderService = {
               // ✅ Tạo hóa đơn
               Invoice.create(invoiceData, (errInvoice, invoiceResult) => {
                 if (errInvoice) {
-                  console.error("Lỗi tạo invoice:", errInvoice); // ✅ log lỗi chi tiết
+                  console.error("🚀 ~ Lỗi tạo invoice:", errInvoice);
                   return callback(errInvoice);
                 }
 
-                console.log("Invoice đã tạo:", invoiceResult); // ✅ log để debug
+                console.log("🚀 ~ Invoice đã tạo:", invoiceResult);
 
                 // ✅ Tạo giao dịch liên kết tới invoice
                 const transactionData = {
@@ -224,7 +259,10 @@ const OrderService = {
                   transactionData,
                   (errTransaction) => {
                     if (errTransaction) {
-                      console.error("Lỗi tạo transaction:", errTransaction); // ✅
+                      console.error(
+                        "🚀 ~ Lỗi tạo transaction:",
+                        errTransaction
+                      ); // ✅
                       return callback(errTransaction);
                     }
                     callback(null, result);
@@ -239,7 +277,7 @@ const OrderService = {
 
             // ❌ Loại bỏ Receipt
             // Thay vào đó, nếu cần hủy giao dịch, hãy gọi TransactionService.markAsCancelled
-            Transaction.markAsCancelledByOrder(order_id, (errTransaction) => {
+            Transaction.markAsCancelled(order_id, (errTransaction) => {
               if (errTransaction) return callback(errTransaction);
 
               callback(null, result);
@@ -298,21 +336,29 @@ const OrderService = {
       return callback(new Error("Missing 'order' or 'orderDetails'"));
     }
 
-    const orderFields = { ...order };
-    console.log("This is orderFields:", orderFields);
+    const validOrderData = filterValidOrderFields(order);
+
+    // const orderFields = { ...order };
+    console.log("~~This is validOrderData:", validOrderData);
+    // const orderDetailsData = orderDetails.map((product) => ({
+    //   order_id: orderId,
+    //   product_id: product.product_id,
+    //   quantity: product.quantity,
+    //   price: product.price,
+    //   discount: product.discount || 0,
+    //   warehouse_id: order.warehouse_id,
+    // }));
+
     const orderDetailsData = orderDetails.map((product) => ({
+      ...product,
       order_id: orderId,
-      product_id: product.product_id,
-      quantity: product.quantity,
-      price: product.price,
-      discount: product.discount || 0,
-      warehouse_id: order.warehouse_id,
+      warehouse_id: validOrderData.warehouse_id,
     }));
 
-    const totals = calculateOrderTotals(orderDetailsData, orderFields);
+    const totals = calculateOrderTotals(orderDetailsData, validOrderData);
 
     const updatedOrder = {
-      ...orderFields,
+      ...validOrderData,
       ...totals,
     };
 

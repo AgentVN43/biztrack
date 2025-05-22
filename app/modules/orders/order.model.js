@@ -524,73 +524,331 @@ const Order = {
     );
   },
 
+  // updateOrderWithDetails: (orderId, orderData, orderDetails, callback) => {
+  //   db.beginTransaction((err) => {
+  //     if (err) return callback(err);
+
+  //     const updateOrderQuery = `
+  //     UPDATE orders SET
+  //       order_date = ?, order_code = ?, order_status = ?, total_amount = ?,
+  //       discount_amount = ?, final_amount = ?, shipping_address = ?,
+  //       payment_method = ?, note = ?, updated_at = NOW(), customer_id = ?, warehouse_id = ?, order_amount = ?, shipping_fee = ?
+  //     WHERE order_id = ?
+  //   `;
+  //     const orderParams = [
+  //       orderData.order_date,
+  //       orderData.order_code,
+  //       orderData.order_status,
+  //       orderData.total_amount,
+  //       orderData.discount_amount,
+  //       orderData.final_amount,
+  //       orderData.shipping_address,
+  //       orderData.payment_method,
+  //       orderData.note,
+  //       orderData.customer_id,
+  //       orderData.warehouse_id,
+  //       orderData.order_amount,
+  //       orderData.shipping_fee,
+  //       orderId,
+  //     ];
+
+  //     db.query(updateOrderQuery, orderParams, (err) => {
+  //       if (err) return db.rollback(() => callback(err));
+
+  //       const deleteDetailsQuery = `DELETE FROM order_details WHERE order_id = ?`;
+  //       db.query(deleteDetailsQuery, [orderId], (err) => {
+  //         if (err) return db.rollback(() => callback(err));
+
+  //         if (orderDetails.length === 0) {
+  //           return db.commit((err) => {
+  //             if (err) return db.rollback(() => callback(err));
+  //             callback(null, {
+  //               message: "Order updated without order details",
+  //             });
+  //           });
+  //         }
+
+  //         const insertDetailQuery = `
+  //         INSERT INTO order_details (
+  //           order_detail_id, order_id, product_id, quantity, price, discount, warehouse_id
+  //         ) VALUES ?
+  //       `;
+
+  //         const detailValues = orderDetails.map((d) => [
+  //           uuidv4(),
+  //           d.order_id,
+  //           d.product_id,
+  //           d.quantity,
+  //           d.price,
+  //           d.discount,
+  //           d.warehouse_id,
+  //         ]);
+
+  //         db.query(insertDetailQuery, [detailValues], (err) => {
+  //           if (err) return db.rollback(() => callback(err));
+
+  //           db.commit((err) => {
+  //             if (err) return db.rollback(() => callback(err));
+  //             callback(null, {
+  //               message: "Order and details updated successfully",
+  //             });
+  //           });
+  //         });
+  //       });
+  //     });
+  //   });
+  // },
+
+  // updateOrderWithDetails: (orderId, orderData, orderDetails, callback) => {
+  //   db.beginTransaction((err) => {
+  //     if (err) return callback(err);
+
+  //     // 👇 Chỉ giữ lại các field thật sự có trong DB
+  //     const {
+  //       customer_id,
+  //       order_date,
+  //       order_code,
+  //       order_status,
+  //       total_amount,
+  //       discount_amount,
+  //       final_amount,
+  //       shipping_address,
+  //       payment_method,
+  //       note,
+  //       warehouse_id,
+  //       order_amount,
+  //       shipping_fee,
+  //     } = orderData;
+
+  //     // Cập nhật đơn hàng
+  //     const updateOrderQuery = `
+  //     UPDATE orders SET
+  //       customer_id = ?,
+  //       order_date = ?,
+  //       order_code = ?,
+  //       order_status = ?,
+  //       total_amount = ?,
+  //       discount_amount = ?,
+  //       final_amount = ?,
+  //       shipping_address = ?,
+  //       payment_method = ?,
+  //       note = ?,
+  //       warehouse_id = ?,
+  //       order_amount = ?,
+  //       shipping_fee = ?,
+  //       updated_at = NOW()
+  //     WHERE order_id = ?
+  //   `;
+
+  //     const orderParams = [
+  //       customer_id,
+  //       order_date,
+  //       order_code,
+  //       order_status,
+  //       total_amount,
+  //       discount_amount,
+  //       final_amount,
+  //       shipping_address,
+  //       payment_method,
+  //       note,
+  //       warehouse_id,
+  //       order_amount,
+  //       shipping_fee,
+  //       orderId,
+  //     ];
+
+  //     db.query(updateOrderQuery, orderParams, (err) => {
+  //       if (err) return db.rollback(() => callback(err));
+
+  //       // Xóa chi tiết cũ
+  //       const deleteDetailsQuery = `DELETE FROM order_details WHERE order_id = ?`;
+  //       db.query(deleteDetailsQuery, [orderId], (err) => {
+  //         if (err) return db.rollback(() => callback(err));
+
+  //         if (orderDetails.length === 0) {
+  //           return db.commit((err) => {
+  //             if (err) return db.rollback(() => callback(err));
+  //             callback(null, {
+  //               message: "Cập nhật đơn hàng thành công (không có sản phẩm)",
+  //             });
+  //           });
+  //         }
+
+  //         // Thêm mới chi tiết
+  //         const insertDetailQuery = `
+  //         INSERT INTO order_details (
+  //           order_detail_id,
+  //           order_id,
+  //           product_id,
+  //           quantity,
+  //           price,
+  //           discount,
+  //           warehouse_id
+  //         ) VALUES ?
+  //       `;
+
+  //         const detailValues = orderDetails.map((d) => [
+  //           uuidv4(),
+  //           d.order_id || orderId,
+  //           d.product_id,
+  //           d.quantity,
+  //           d.price,
+  //           d.discount || 0,
+  //           d.warehouse_id || orderData.warehouse_id,
+  //         ]);
+
+  //         db.query(insertDetailQuery, [detailValues], (err) => {
+  //           if (err) return db.rollback(() => callback(err));
+
+  //           db.commit((err) => {
+  //             if (err) return db.rollback(() => callback(err));
+  //             callback(null, {
+  //               message: "Cập nhật đơn hàng và chi tiết thành công",
+  //             });
+  //           });
+  //         });
+  //       });
+  //     });
+  //   });
+  // },
+
   updateOrderWithDetails: (orderId, orderData, orderDetails, callback) => {
     db.beginTransaction((err) => {
-      if (err) return callback(err);
+      if (err) {
+        console.error("Lỗi khi bắt đầu transaction:", err);
+        return callback(err);
+      }
 
-      const updateOrderQuery = `
-      UPDATE orders SET
-        order_date = ?, order_code = ?, order_status = ?, total_amount = ?,
-        discount_amount = ?, final_amount = ?, shipping_address = ?,
-        payment_method = ?, note = ?, updated_at = NOW(), customer_id = ?, warehouse_id = ?, order_amount = ?, shipping_fee = ?
-      WHERE order_id = ?
-    `;
-      const orderParams = [
-        orderData.order_date,
-        orderData.order_code,
-        orderData.order_status,
-        orderData.total_amount,
-        orderData.discount_amount,
-        orderData.final_amount,
-        orderData.shipping_address,
-        orderData.payment_method,
-        orderData.note,
-        orderData.customer_id,
-        orderData.warehouse_id,
-        orderData.order_amount,
-        orderData.shipping_fee,
-        orderId,
+      // Xây dựng động mệnh đề SET cho câu lệnh UPDATE orders
+      const updateFields = [];
+      const updateValues = [];
+
+      // Định nghĩa các trường được phép cập nhật trong bảng orders
+      const allowedOrderFields = [
+        "customer_id",
+        "order_date",
+        "order_code",
+        "order_status",
+        "total_amount",
+        "discount_amount",
+        "final_amount",
+        "shipping_address",
+        "payment_method",
+        "note",
+        "warehouse_id",
+        "order_amount",
+        "shipping_fee",
       ];
 
-      db.query(updateOrderQuery, orderParams, (err) => {
-        if (err) return db.rollback(() => callback(err));
+      // Chỉ thêm các trường có giá trị hợp lệ vào câu lệnh UPDATE
+      allowedOrderFields.forEach((field) => {
+        // Kiểm tra nếu trường tồn tại trong orderData và không phải undefined
+        // (null vẫn được chấp nhận để cập nhật giá trị null vào DB)
+        if (orderData[field] !== undefined) {
+          updateFields.push(`${field} = ?`);
+          updateValues.push(orderData[field]);
+        }
+      });
 
+      // Luôn cập nhật thời gian sửa đổi
+      updateFields.push(`updated_at = NOW()`);
+
+      // Kiểm tra nếu không có trường nào để cập nhật (ngoại trừ updated_at)
+      if (
+        updateFields.length === 1 &&
+        updateFields[0] === "updated_at = NOW()"
+      ) {
+        console.warn(
+          "Không có trường đơn hàng nào được cung cấp để cập nhật (ngoại trừ updated_at)."
+        );
+        // Nếu không có gì để cập nhật cho order chính, vẫn tiếp tục xử lý order details
+      }
+
+      // Xây dựng câu lệnh UPDATE hoàn chỉnh
+      const updateOrderQuery = `
+        UPDATE orders SET
+          ${updateFields.join(", ")}
+        WHERE order_id = ?
+      `;
+      updateValues.push(orderId); // Thêm orderId vào cuối mảng giá trị cho mệnh đề WHERE
+
+      // Ghi log câu lệnh SQL và tham số để kiểm tra
+      console.log("Executing updateOrderQuery:", updateOrderQuery);
+      console.log("With parameters:", updateValues);
+
+      // Thực hiện cập nhật đơn hàng
+      db.query(updateOrderQuery, updateValues, (err) => {
+        if (err) {
+          console.error("Lỗi khi cập nhật đơn hàng:", err);
+          return db.rollback(() => callback(err)); // Rollback transaction nếu có lỗi
+        }
+
+        // Xóa tất cả các chi tiết đơn hàng cũ liên quan đến orderId
         const deleteDetailsQuery = `DELETE FROM order_details WHERE order_id = ?`;
         db.query(deleteDetailsQuery, [orderId], (err) => {
-          if (err) return db.rollback(() => callback(err));
+          if (err) {
+            console.error("Lỗi khi xóa chi tiết đơn hàng cũ:", err);
+            return db.rollback(() => callback(err));
+          }
 
+          // Nếu không có chi tiết đơn hàng mới nào được cung cấp, commit transaction và kết thúc
           if (orderDetails.length === 0) {
             return db.commit((err) => {
-              if (err) return db.rollback(() => callback(err));
+              if (err) {
+                console.error(
+                  "Lỗi khi commit transaction (không có chi tiết đơn hàng):",
+                  err
+                );
+                return db.rollback(() => callback(err));
+              }
               callback(null, {
-                message: "Order updated without order details",
+                message:
+                  "Cập nhật đơn hàng thành công (không có sản phẩm chi tiết)",
               });
             });
           }
 
+          // Nếu có chi tiết đơn hàng mới, thêm chúng vào bảng order_details
           const insertDetailQuery = `
-          INSERT INTO order_details (
-            order_detail_id, order_id, product_id, quantity, price, discount, warehouse_id
-          ) VALUES ?
-        `;
+            INSERT INTO order_details (
+              order_detail_id, 
+              order_id, 
+              product_id, 
+              quantity, 
+              price, 
+              discount, 
+              warehouse_id
+            ) VALUES ?
+          `;
 
+          // Chuẩn bị mảng các giá trị để insert hàng loạt
           const detailValues = orderDetails.map((d) => [
-            uuidv4(),
-            d.order_id,
+            uuidv4(), // Tạo UUID cho order_detail_id
+            d.order_id || orderId, // Đảm bảo order_id được gán đúng
             d.product_id,
             d.quantity,
             d.price,
-            d.discount,
-            d.warehouse_id,
+            d.discount || 0,
+            d.warehouse_id || orderData.warehouse_id, // Sử dụng warehouse_id từ dữ liệu order chính nếu chi tiết không có
           ]);
 
           db.query(insertDetailQuery, [detailValues], (err) => {
-            if (err) return db.rollback(() => callback(err));
+            if (err) {
+              console.error("Lỗi khi thêm chi tiết đơn hàng mới:", err);
+              return db.rollback(() => callback(err));
+            }
 
+            // Commit transaction nếu tất cả các bước thành công
             db.commit((err) => {
-              if (err) return db.rollback(() => callback(err));
+              if (err) {
+                console.error(
+                  "Lỗi khi commit transaction (có chi tiết đơn hàng):",
+                  err
+                );
+                return db.rollback(() => callback(err));
+              }
               callback(null, {
-                message: "Order and details updated successfully",
+                message: "Cập nhật đơn hàng và chi tiết thành công",
               });
             });
           });

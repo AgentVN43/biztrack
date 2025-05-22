@@ -203,19 +203,19 @@ const TransactionModel = {
   //   );
   // },
 
-  // markAsCancelled: (order_id, callback) => {
-  //   const sql = `
-  //   UPDATE transactions 
-  //   SET transaction_status = 'Huỷ đơn', note = CONCAT(IFNULL(note, ''), ' [Hủy đơn]'), updated_at = CURRENT_TIMESTAMP 
-  //   WHERE source_type = 'receipt' AND source_id IN (
-  //     SELECT receipt_id FROM receipts WHERE order_id = ?
-  //   )`;
+  markAsCancelled: (order_id, callback) => {
+    const sql = `
+    UPDATE transactions 
+    SET transaction_status = 'Huỷ đơn', note = CONCAT(IFNULL(note, ''), ' [Hủy đơn]'), updated_at = CURRENT_TIMESTAMP 
+    WHERE source_type = 'receipt' AND source_id IN (
+      SELECT receipt_id FROM receipts WHERE order_id = ?
+    )`;
 
-  //   db.query(sql, [order_id], (err, result) => {
-  //     if (err) return callback(err);
-  //     callback(null, result);
-  //   });
-  // },
+    db.query(sql, [order_id], (err, result) => {
+      if (err) return callback(err);
+      callback(null, result);
+    });
+  },
 };
 
 module.exports = TransactionModel;
