@@ -1,3 +1,18 @@
+// Thêm đoạn code này vào đầu file app.js hoặc server.js của bạn
+process.on('uncaughtException', (err) => {
+  console.error('🔥 Lỗi không được xử lý (Uncaught Exception):', err);
+  // Quan trọng: Tùy chọn thoát tiến trình sau khi log lỗi
+  // process.exit(1); 
+  // Trong môi trường phát triển, bạn có thể không muốn thoát ngay để debug
+  // Trong môi trường production, thường nên thoát để tránh trạng thái không ổn định
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🔥 Lỗi Promise không được xử lý (Unhandled Rejection):', reason, promise);
+  // Tùy chọn thoát tiến trình
+  // process.exit(1);
+});
+
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config({ path: ".env.local" });
@@ -34,3 +49,6 @@ app.listen(port, () => {
 });
 
 module.exports = app; // For testing purposes
+
+
+

@@ -1,145 +1,72 @@
-const db = require("../../config/db.config"); // Kết nối database của bạn
+// invoice.model.js
+const db = require("../../config/db.config");
+const { v4: uuidv4 } = require("uuid");
 
-const getAll = (callback) => {
-    const query = "SELECT * FROM invoices";
-    db.query(query, (error, results) => {
-        if (error) return callback(error);
-        callback(null, results);
-    });
-};
-
-const getById = (id, callback) => {
-    const query = "SELECT * FROM invoices WHERE invoice_id = ?";
-    db.query(query, [id], (error, results) => {
-        if (error) return callback(error);
-        callback(null, results[0]);
-    });
-};
-
-const create = (data, callback) => {
+const Invoice = {
+  create: async (data) => {
+    const invoice_id = uuidv4();
     const {
-        invoice_code,
-        invoice_type,
-        order_id,
-        customer_id,
-        supplier_id,
-        total_amount,
-        tax_amount = 0.00,
-        discount_amount = 0.00,
-        final_amount,
-        issued_date,
-        due_date,
-        status = "pending",
-        note
-    } = data;
-
-    const invoice_id = require("uuid").v4();
-
-    const query = `
-        INSERT INTO invoices (
-            invoice_id, invoice_code, invoice_type, order_id, 
-            customer_id, supplier_id, total_amount, tax_amount, 
-            discount_amount, final_amount, issued_date, due_date, 
-            status, note
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    const values = [
-        invoice_id,
-        invoice_code,
-        invoice_type,
-        order_id,
-        customer_id,
-        supplier_id,
-        total_amount,
-        tax_amount,
-        discount_amount,
-        final_amount,
-        issued_date,
-        due_date,
-        status,
-        note
-    ];
-
-    db.query(query, values, (error, results) => {
-        if (error) return callback(error);
-        callback(null, {
-            invoice_id,
-            ...data
-        });
-    });
-};
-
-const update = (id, data, callback) => {
-    const {
-        invoice_code,
-        invoice_type,
-        order_id,
-        customer_id,
-        supplier_id,
-        total_amount,
-        tax_amount,
-        discount_amount,
-        final_amount,
-        issued_date,
-        due_date,
-        status,
-        note
+      invoice_code,
+      invoice_type,
+      order_id,
+      customer_id,
+      supplier_id,
+      total_amount,
+      tax_amount,
+      discount_amount,
+      final_amount,
+      issued_date,
+      due_date,
+      status,
+      note,
     } = data;
 
     const query = `
-        UPDATE invoices SET
-            invoice_code = ?,
-            invoice_type = ?,
-            order_id = ?,
-            customer_id = ?,
-            supplier_id = ?,
-            total_amount = ?,
-            tax_amount = ?,
-            discount_amount = ?,
-            final_amount = ?,
-            issued_date = ?,
-            due_date = ?,
-            status = ?,
-            note = ?
-        WHERE invoice_id = ?
-    `;
+            INSERT INTO invoices (
+                invoice_id, invoice_code, invoice_type, order_id,
+                customer_id, supplier_id, total_amount, tax_amount,
+                discount_amount, final_amount, issued_date, due_date,
+                status, note
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
 
     const values = [
-        invoice_code,
-        invoice_type,
-        order_id,
-        customer_id,
-        supplier_id,
-        total_amount,
-        tax_amount,
-        discount_amount,
-        final_amount,
-        issued_date,
-        due_date,
-        status,
-        note,
-        id
+      invoice_id,
+      invoice_code,
+      invoice_type,
+      order_id,
+      customer_id,
+      supplier_id,
+      total_amount,
+      tax_amount,
+      discount_amount,
+      final_amount,
+      issued_date,
+      due_date,
+      status,
+      note,
     ];
 
-    db.query(query, values, (error, results) => {
-        if (error) return callback(error);
-        callback(null, results.affectedRows > 0);
-    });
+    try {
+      console.log("🚀 ~ invoice.model.js: create - SQL Query:", query);
+      console.log("🚀 ~ invoice.model.js: create - SQL Values:", values);
+      const [results] = await db.promise().query(query, values);
+      const invoiceResult = { invoice_id, ...data };
+      console.log(
+        "🚀 ~ invoice.model.js: create - Invoice created successfully:",
+        invoiceResult
+      );
+      return invoiceResult;
+    } catch (error) {
+      console.error(
+        "🚀 ~ invoice.model.js: create - Error creating invoice:",
+        error
+      );
+      throw error;
+    }
+  },
+
+  // Các hàm model khác (nếu có) cũng có thể được chuyển đổi sang async/await
 };
 
-const deleteInvoice = (id, callback) => {
-    const query = "DELETE FROM invoices WHERE invoice_id = ?";
-    db.query(query, [id], (error, results) => {
-        if (error) return callback(error);
-        callback(null, results.affectedRows > 0);
-    });
-};
-
-module.exports = {
-    getAll,
-    getById,
-    create,
-    update,
-    delete: deleteInvoice
-};
+module.exports = Invoice;
