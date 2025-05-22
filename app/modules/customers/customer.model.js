@@ -21,12 +21,10 @@ exports.getAll = (callback) => {
     if (err) {
       return callback(err, null);
     }
-    callback(null, {
-      success: true,
-      data: results,
-    });
+    callback(null, results); // ✅ Trả mảng thẳng, không bọc { results }
   });
 };
+
 
 exports.getById = (customer_id, callback) => {
   db.query(

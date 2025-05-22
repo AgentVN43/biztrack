@@ -2,43 +2,107 @@ const db = require("../../config/db.config");
 const { v4: uuidv4 } = require("uuid");
 
 const TransactionModel = {
+  // create: (data, callback) => {
+  //   const transaction_id = uuidv4();
+  //   const {
+  //     transaction_code,
+  //     transaction_type,
+  //     amount,
+  //     description,
+  //     category,
+  //     payment_method,
+  //     source_type,
+  //     source_id,
+  //   } = data;
+
+  //   db.query(
+  //     `INSERT INTO transactions (
+  //       transaction_id, transaction_code, transaction_type, amount,
+  //       description, category, payment_method, source_type, source_id
+  //     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  //     [
+  //       transaction_id,
+  //       transaction_code,
+  //       transaction_type,
+  //       amount,
+  //       description,
+  //       category,
+  //       payment_method,
+  //       source_type,
+  //       source_id,
+  //     ],
+  //     (error, results) => {
+  //       if (error) return callback(error);
+  //       return callback(null, {
+  //         transaction_id,
+  //         ...data,
+  //       });
+  //     }
+  //   );
+  // },
+
   create: (data, callback) => {
     const transaction_id = uuidv4();
+
     const {
       transaction_code,
-      transaction_type,
+      type, // receipt / payment / refund...
+      amount,
+      description = null,
+      category = null,
+      payment_method = null,
+      related_type, // order / invoice / refund...
+      related_id, // id của nguồn tạo ra giao dịch
+    } = data;
+
+    // Validate bắt buộc
+    if (
+      !transaction_code ||
+      !type ||
+      amount == null ||
+      !related_type ||
+      !related_id
+    ) {
+      return callback(new Error("Thiếu thông tin bắt buộc để tạo giao dịch"));
+    }
+
+    const query = `
+      INSERT INTO transactions (
+        transaction_id, transaction_code, type, amount, 
+        description, category, payment_method, related_type, related_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const values = [
+      transaction_id,
+      transaction_code,
+      type,
       amount,
       description,
       category,
       payment_method,
-      source_type,
-      source_id,
-    } = data;
+      related_type,
+      related_id,
+    ];
 
-    db.query(
-      `INSERT INTO transactions (
-        transaction_id, transaction_code, transaction_type, amount, 
-        description, category, payment_method, source_type, source_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
+    db.query(query, values, (error, results) => {
+      if (error) {
+        console.error("Lỗi khi tạo giao dịch:", error);
+        return callback(error);
+      }
+
+      return callback(null, {
         transaction_id,
         transaction_code,
-        transaction_type,
+        type,
         amount,
         description,
         category,
         payment_method,
-        source_type,
-        source_id,
-      ],
-      (error, results) => {
-        if (error) return callback(error);
-        return callback(null, {
-          transaction_id,
-          ...data,
-        });
-      }
-    );
+        related_type,
+        related_id,
+      });
+    });
   },
 
   findAll: (callback) => {
@@ -109,45 +173,49 @@ const TransactionModel = {
     );
   },
 
-  confirmPayment: (order_id, callback) => {
-    const transaction_status = "Hoàn tất"; // hoặc bạn dùng 'Hoàn tất'
-    const updated_at = new Date();
+  // confirmPayment: (order_id, callback) => {
+  //   const transaction_status = "Hoàn tất"; // hoặc bạn dùng 'Hoàn tất'
+  //   const updated_at = new Date();
 
-    const sql = `
-    UPDATE transactions 
-    SET transaction_status = ?, updated_at = ? 
-    WHERE source_type = 'receipt' AND source_id IN (
-      SELECT receipt_id FROM receipts WHERE order_id = ?
-    )`;
+  //   const sql = `
+  //   UPDATE transactions 
+  //   SET transaction_status = ?, updated_at = ? 
+  //   WHERE source_type = 'receipt' AND source_id IN (
+  //     SELECT receipt_id FROM receipts WHERE order_id = ?
+  //   )`;
 
-    db.query(sql, [transaction_status, updated_at, order_id], (error, results) => {
-      if (error) return callback(error);
+  //   db.query(
+  //     sql,
+  //     [transaction_status, updated_at, order_id],
+  //     (error, results) => {
+  //       if (error) return callback(error);
 
-      if (results.affectedRows === 0) {
-        return callback(null, null); // Không tìm thấy transaction nào để cập nhật
-      }
+  //       if (results.affectedRows === 0) {
+  //         return callback(null, null); // Không tìm thấy transaction nào để cập nhật
+  //       }
 
-      callback(null, {
-        order_id,
-        transaction_status,
-        updated_at,
-      });
-    });
-  },
+  //       callback(null, {
+  //         order_id,
+  //         transaction_status,
+  //         updated_at,
+  //       });
+  //     }
+  //   );
+  // },
 
-  markAsCancelled: (order_id, callback) => {
-    const sql = `
-    UPDATE transactions 
-    SET transaction_status = 'Huỷ đơn', note = CONCAT(IFNULL(note, ''), ' [Hủy đơn]'), updated_at = CURRENT_TIMESTAMP 
-    WHERE source_type = 'receipt' AND source_id IN (
-      SELECT receipt_id FROM receipts WHERE order_id = ?
-    )`;
+  // markAsCancelled: (order_id, callback) => {
+  //   const sql = `
+  //   UPDATE transactions 
+  //   SET transaction_status = 'Huỷ đơn', note = CONCAT(IFNULL(note, ''), ' [Hủy đơn]'), updated_at = CURRENT_TIMESTAMP 
+  //   WHERE source_type = 'receipt' AND source_id IN (
+  //     SELECT receipt_id FROM receipts WHERE order_id = ?
+  //   )`;
 
-    db.query(sql, [order_id], (err, result) => {
-      if (err) return callback(err);
-      callback(null, result);
-    });
-  },
+  //   db.query(sql, [order_id], (err, result) => {
+  //     if (err) return callback(err);
+  //     callback(null, result);
+  //   });
+  // },
 };
 
 module.exports = TransactionModel;

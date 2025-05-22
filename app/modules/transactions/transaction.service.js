@@ -51,6 +51,36 @@ const markAsCancelled = (order_id, callback) => {
   });
 };
 
+// Dùng để hủy các giao dịch liên quan đến một order qua invoice
+const markAsCancelledByOrder = (order_id, callback) => {
+  // Tìm các invoice thuộc order này trước
+  const query = `
+        SELECT i.invoice_id 
+        FROM invoices i
+        WHERE i.order_id = ?
+    `;
+
+  db.query(query, [order_id], (err, invoices) => {
+    if (err) return callback(err);
+
+    if (!invoices.length) return callback(null); // Không có invoice nào để hủy
+
+    const invoiceIds = invoices.map((inv) => inv.invoice_id);
+
+    // Hủy các giao dịch liên quan đến các invoice này
+    const updateQuery = `
+            UPDATE transactions
+            SET status = 'cancelled'
+            WHERE related_type = 'invoice' AND related_id IN (?)
+        `;
+
+    db.query(updateQuery, [invoiceIds], (err2) => {
+      if (err2) return callback(err2);
+      callback(null);
+    });
+  });
+};
+
 module.exports = {
   createTransaction,
   getAllTransactions,
@@ -59,4 +89,5 @@ module.exports = {
   deleteTransactionById,
   confirmPayment,
   markAsCancelled,
+  markAsCancelledByOrder,
 };

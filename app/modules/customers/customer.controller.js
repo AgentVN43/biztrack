@@ -11,14 +11,23 @@ exports.create = (req, res) => {
       .json({ message: "Customer created successfully", data: result });
   });
 };
+
 exports.get = (req, res) => {
-  CustomerService.getAllCustomers((err, results) => {
+  CustomerService.getAllCustomers((err, result) => {
     if (err) {
-      return res.status(500).json({ error: err });
+      console.error("Lỗi khi lấy danh sách khách hàng:", err.message);
+      return res.status(500).json({
+        success: false,
+        error: "Lỗi server",
+        data: [],
+      });
     }
-    res.status(200).json(results);
+
+    return res.status(200).json({ success: true, data: result }); // ✅ Gửi mảng ra trực tiếp
   });
 };
+
+
 exports.getById = (req, res) => {
   const id = req.params.id;
   CustomerService.getCustomerById(id, (err, result) => {

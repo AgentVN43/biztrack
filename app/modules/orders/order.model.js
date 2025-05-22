@@ -130,78 +130,174 @@ const Order = {
   //   });
   // },
 
+  // create: (data, callback) => {
+  //   generateOrderCode((error, order_code) => {
+  //     if (error) {
+  //       return callback(error, null);
+  //     }
+
+  //     const {
+  //       customer_id,
+  //       order_date,
+  //       total_amount,
+  //       discount_amount,
+  //       final_amount,
+  //       shipping_address,
+  //       payment_method,
+  //       note,
+  //       order_amount,
+  //       warehouse_id,
+  //       shipping_fee,
+  //     } = data;
+
+  //     // Mặc định các trường bắt buộc nhưng không có trong data
+  //     const order_status = "Mới";
+  //     const is_active = 1;
+  //     const order_id = uuidv4();
+
+  //     db.query(
+  //       `INSERT INTO orders (
+  //       order_id,
+  //       customer_id,
+  //       order_date,
+  //       order_code,
+  //       total_amount,
+  //       discount_amount,
+  //       final_amount,
+  //       order_status,
+  //       is_active,
+  //       shipping_address,
+  //       payment_method,
+  //       note,
+  //       warehouse_id,
+  //       order_amount,
+  //       shipping_fee
+  //     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  //       [
+  //         order_id,
+  //         customer_id,
+  //         order_date,
+  //         order_code,
+  //         total_amount || 0,
+  //         discount_amount || 0,
+  //         final_amount || 0,
+  //         order_status,
+  //         is_active,
+  //         shipping_address,
+  //         payment_method,
+  //         note || null,
+  //         warehouse_id || null,
+  //         order_amount || 0,
+  //         shipping_fee || 0,
+  //       ],
+  //       (error, results) => {
+  //         if (error) {
+  //           return callback(error, null);
+  //         }
+
+  //         callback(null, {
+  //           order_id,
+  //           order_code,
+  //           ...data,
+  //         });
+  //       }
+  //     );
+  //   });
+  // },
+
   create: (data, callback) => {
+    const {
+      customer_id,
+      order_date,
+      total_amount,
+      discount_amount,
+      final_amount,
+      shipping_address,
+      payment_method,
+      note,
+      order_amount,
+      warehouse_id,
+      shipping_fee,
+    } = data;
+
+    // --- VALIDATE INPUTS ---
+    if (!customer_id) {
+      return callback(new Error("customer_id là bắt buộc"), null);
+    }
+
+    if (!order_date || isNaN(Date.parse(order_date))) {
+      return callback(new Error("order_date không hợp lệ"), null);
+    }
+
+    // Nếu warehouse_id bắt buộc nhưng bị thiếu
+    if (!warehouse_id) {
+      return callback(new Error("warehouse_id là bắt buộc"), null);
+    }
+
     generateOrderCode((error, order_code) => {
       if (error) {
+        console.error("Lỗi khi tạo mã đơn hàng:", error.message);
         return callback(error, null);
       }
 
-      const {
-        customer_id,
-        order_date,
-        total_amount,
-        discount_amount,
-        final_amount,
-        shipping_address,
-        payment_method,
-        note,
-        order_amount,
-        warehouse_id,
-        shipping_fee,
-      } = data;
-
-      // Mặc định các trường bắt buộc nhưng không có trong data
       const order_status = "Mới";
       const is_active = 1;
       const order_id = uuidv4();
 
-      db.query(
-        `INSERT INTO orders (
+      const query = `
+            INSERT INTO orders (
+                order_id,
+                customer_id,
+                order_date,
+                order_code,
+                total_amount,
+                discount_amount,
+                final_amount,
+                order_status,
+                is_active,
+                shipping_address,
+                payment_method,
+                note,
+                warehouse_id,
+                order_amount,
+                shipping_fee
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+      const values = [
         order_id,
         customer_id,
         order_date,
         order_code,
-        total_amount,
-        discount_amount,
-        final_amount,
+        total_amount || 0,
+        discount_amount || 0,
+        final_amount || 0,
         order_status,
         is_active,
-        shipping_address,
-        payment_method,
-        note,
-        warehouse_id,
-        order_amount,
-        shipping_fee
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
+        shipping_address || null,
+        payment_method || null,
+        note || null,
+        warehouse_id || null,
+        order_amount || 0,
+        shipping_fee || 0,
+      ];
+
+      db.query(query, values, (error, results) => {
+        if (error) {
+          console.error("Lỗi khi lưu đơn hàng:", error.message);
+          return callback(error, null);
+        }
+
+        callback(null, {
           order_id,
+          order_code,
           customer_id,
           order_date,
-          order_code,
-          total_amount || 0,
-          discount_amount || 0,
-          final_amount || 0,
           order_status,
           is_active,
-          shipping_address,
-          payment_method,
-          note || null,
-          warehouse_id || null,
-          order_amount || 0,
-          shipping_fee || 0,
-        ],
-        (error, results) => {
-          if (error) {
-            return callback(error, null);
-          }
-
-          callback(null, {
-            order_id,
-            order_code,
-            ...data,
-          });
-        }
-      );
+          ...data,
+        });
+      });
     });
   },
 
@@ -503,4 +599,5 @@ const Order = {
     });
   },
 };
+
 module.exports = Order;

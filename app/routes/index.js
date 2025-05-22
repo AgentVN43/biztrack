@@ -1,17 +1,17 @@
 const pingRoutes = require("./ping.routes");
 const authRoutes = require("./auth.routes");
 const userRoutes = require("./user.routes");
-const categoryRoutes = require("./category.routes")
-const productRoutes = require("./product.routes")
-const warehouseRoutes = require('../modules/warehouse/warehouse.route');
-const purchaseOrderRoutes = require('../modules/purchaseOrder/purchaseOrder.routes')
-const inventoriesRoutes = require('../modules/inventories/inventory.routes')
-const paymentRoutes = require('../modules/payments/payments.routes')
-const customerRoutes = require('../modules/customers/customer.routes')
-const orderRoutes = require('../modules/orders/order.routes')
-const orderDetailRoutes = require('../modules/orderDetails/orderDetail.routes')
-const searchRoutes = require('../modules/search/search.routes')
-const receiptRoutes = require('../modules/receipts/receipts.routes')
+const categoryRoutes = require("./category.routes");
+const productRoutes = require("./product.routes");
+const warehouseRoutes = require("../modules/warehouse/warehouse.route");
+const purchaseOrderRoutes = require("../modules/purchaseOrder/purchaseOrder.routes");
+const inventoriesRoutes = require("../modules/inventories/inventory.routes");
+const paymentRoutes = require("../modules/payments/payments.routes");
+const customerRoutes = require("../modules/customers/customer.routes");
+const orderRoutes = require("../modules/orders/order.routes");
+const orderDetailRoutes = require("../modules/orderDetails/orderDetail.routes");
+const searchRoutes = require("../modules/search/search.routes");
+const invoiceRoutes = require("../modules/invoice/invoice.routes");
 
 module.exports = (app) => {
   // Register all routes
@@ -28,7 +28,7 @@ module.exports = (app) => {
   app.use("/api/v1/orders", orderRoutes);
   app.use("/api/v1/order-details", orderDetailRoutes);
   app.use("/api/v1/search", searchRoutes);
-  app.use("/api/v1/receipts", receiptRoutes);
+  app.use("/api/v1/invoices", invoiceRoutes);
 
   // Default route for non-existent endpoints
   app.use("*", (req, res) => {
