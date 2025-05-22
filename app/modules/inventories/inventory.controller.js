@@ -33,6 +33,23 @@ exports.getById = (req, res, next) => {
 //   );
 // };
 
+// exports.getByWareHouseId = (req, res, next) => {
+//   const warehouseId = req.params.id;
+
+//   service.getByWareHouseId(warehouseId, (err, results) => {
+//     if (err) {
+//       return next(err);
+//     }
+
+//     // Nếu không có dữ liệu, trả về mảng rỗng thay vì lỗi
+//     if (!results || results.length === 0) {
+//       return res.status(200).json({data:[]});
+//     }
+
+//     return res.status(200).json(results);
+//   });
+// };
+
 exports.getByWareHouseId = (req, res, next) => {
   const warehouseId = req.params.id;
 
@@ -41,12 +58,12 @@ exports.getByWareHouseId = (req, res, next) => {
       return next(err);
     }
 
-    // Nếu không có dữ liệu, trả về mảng rỗng thay vì lỗi
-    if (!results || results.length === 0) {
-      return res.status(200).json([]);
-    }
+    // Luôn trả về object với key "data"
+    const response = {
+      data: Array.isArray(results) ? results : [],
+    };
 
-    return res.status(200).json(results);
+    return res.status(200).json(response);
   });
 };
 
