@@ -26,7 +26,48 @@ const AnalysisService = {
     }
   },
 
-  // Các hàm phân tích khác sẽ được thêm vào đây
+  async getRevenueByTimePeriod(period, startDate, endDate) {
+    try {
+      return await AnalysisModel.getRevenueByTimePeriod(
+        period,
+        startDate,
+        endDate
+      );
+    } catch (error) {
+      console.error("Lỗi ở Service khi lấy thống kê doanh thu:", error);
+      throw error;
+    }
+  },
+
+  async getOutstandingDebt() {
+    try {
+      return await AnalysisModel.getOutstandingDebt();
+    } catch (error) {
+      console.error("Lỗi ở Service khi lấy thống kê công nợ:", error);
+      throw error;
+    }
+  },
+
+  async getReceivableOrders() {
+    try {
+      return await AnalysisModel.getReceivableOrders();
+    } catch (error) {
+      console.error("Lỗi ở Service khi lấy danh sách order phải thu:", error);
+      throw error;
+    }
+  },
+
+  async getPayablePurchaseOrders() {
+    try {
+      return await AnalysisModel.getPayablePurchaseOrders();
+    } catch (error) {
+      console.error(
+        "Lỗi ở Service khi lấy danh sách purchase order phải trả:",
+        error
+      );
+      throw error;
+    }
+  },
 };
 
 module.exports = AnalysisService;
