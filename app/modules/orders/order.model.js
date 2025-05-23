@@ -1097,6 +1097,26 @@ const OrderModel = {
       );
 
       order.order_details = detailResults || []; // Gán chi tiết đơn hàng vào thuộc tính order_details
+
+      // Nếu order đã hoàn tất, lấy thêm invoices và transactions
+      if (order.order_status === "Hoàn tất") {
+        // Lấy danh sách invoices cho order này
+        const [invoiceResults] = await db
+          .promise()
+          .query("SELECT * FROM invoices WHERE order_id = ?", [order_id]);
+        order.invoices = invoiceResults || [];
+
+        // Lấy danh sách transactions cho từng invoice
+        for (const invoice of order.invoices) {
+          const [transactionResults] = await db
+            .promise()
+            .query("SELECT * FROM transactions WHERE related_id = ?", [
+              invoice.invoice_id,
+            ]);
+          invoice.transactions = transactionResults || [];
+        }
+      }
+
       return order;
     } catch (error) {
       console.error("Lỗi khi đọc đơn hàng theo ID:", error.message);

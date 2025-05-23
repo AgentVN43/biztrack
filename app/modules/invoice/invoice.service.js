@@ -1,14 +1,5 @@
 // const InvoiceModel = require("./invoice.model");
 
-// const getAll = () => {
-//     return new Promise((resolve, reject) => {
-//         InvoiceModel.getAll((err, results) => {
-//             if (err) return reject(err);
-//             resolve(results);
-//         });
-//     });
-// };
-
 // const getById = (id) => {
 //     return new Promise((resolve, reject) => {
 //         InvoiceModel.getById(id, (err, result) => {
@@ -77,8 +68,74 @@ const InvoiceService = {
     }
   },
 
-  // Các hàm service khác của InvoiceService (ví dụ: read, update, delete)
-  // Bạn cần thêm các hàm này vào đây và refactor chúng sang async/await nếu chúng gọi model.
+  updateByInvoiceCode: async (invoice_code, data) => {
+    try {
+      const updatedInvoice = await InvoiceModel.updateByInvoiceCode(
+        invoice_code,
+        data
+      );
+      return updatedInvoice;
+    } catch (error) {
+      throw error; // Propagate the error to the controller
+    }
+  },
+
+  getAll: async () => {
+    try {
+      const results = await InvoiceModel.getAll();
+      return results;
+    } catch (error) {
+      // Handle the error as needed, e.g., log it or rethrow it
+      console.error(
+        "🚀 ~ invoice.service.js: getAll - Error fetching invoices:",
+        error
+      );
+      throw error; // or handle it in another way
+    }
+  },
+
+  getPaid: async () => {
+    try {
+      const results = await InvoiceModel.getPaid();
+      return results;
+    } catch (error) {
+      // Handle the error as needed, e.g., log it or rethrow it
+      console.error(
+        "🚀 ~ invoice.service.js: getAll - Error fetching invoices:",
+        error
+      );
+      throw error; // or handle it in another way
+    }
+  },
+
+  getUnPaid: async () => {
+    try {
+      const results = await InvoiceModel.getUnPaid();
+      return results;
+    } catch (error) {
+      // Handle the error as needed, e.g., log it or rethrow it
+      console.error(
+        "🚀 ~ invoice.service.js: getAll - Error fetching invoices:",
+        error
+      );
+      throw error; // or handle it in another way
+    }
+  },
+
+  getByInvoiceCode: async (invoice_code) => {
+    // Hàm này giờ là async
+    try {
+      // Gọi InvoiceModel.create và await kết quả của Promise
+      const invoice = await InvoiceModel.getByInvoiceCode(invoice_code);
+      return invoice;
+    } catch (error) {
+      console.error(
+        "🚀 ~ invoice.service.js: create - Error get invoice by id:",
+        error
+      );
+      throw error; // Ném lỗi để được bắt bởi tầng gọi (order.service.js)
+    }
+  },
 };
 
 module.exports = InvoiceService; // Đảm bảo bạn xuất InvoiceService

@@ -12,6 +12,7 @@ const orderRoutes = require("../modules/orders/order.routes");
 const orderDetailRoutes = require("../modules/orderDetails/orderDetail.routes");
 const searchRoutes = require("../modules/search/search.routes");
 const invoiceRoutes = require("../modules/invoice/invoice.routes");
+const analysisRoutes = require("../modules/analysis/analysis.routes");
 
 module.exports = (app) => {
   // Register all routes
@@ -29,6 +30,7 @@ module.exports = (app) => {
   app.use("/api/v1/order-details", orderDetailRoutes);
   app.use("/api/v1/search", searchRoutes);
   app.use("/api/v1/invoices", invoiceRoutes);
+  app.use("/api/v1/analysis", analysisRoutes);
 
   // Default route for non-existent endpoints
   app.use("*", (req, res) => {
