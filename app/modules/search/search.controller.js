@@ -10,14 +10,19 @@ const getPaginationParams = (req) => {
 
 exports.searchCustomerByPhone = async (req, res) => {
   const { phone } = req.query;
+  const { page, skip, limit } = getPaginationParams(req);
 
   if (!phone) {
     return createResponse(res, 400, false, null, "Số điện thoại là bắt buộc");
   }
 
   try {
-    const customer = await SearchService.getCustomerByPhone(phone);
-    return createResponse(res, 200, true, customer);
+    const { customers, total } = await SearchService.getCustomerByPhone(
+      phone,
+      skip,
+      limit
+    );
+    return createResponse(res, 200, true, customers, null, total, page, limit);
   } catch (error) {
     return createResponse(res, 404, false, null, error.message);
   }

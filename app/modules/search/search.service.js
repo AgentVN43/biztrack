@@ -1,13 +1,10 @@
 const { CustomerModel, OrderModel, ProductModel } = require("./search.model");
 
-exports.getCustomerByPhone = async (phone) => {
+exports.getCustomerByPhone = async (phone, skip, limit) => {
   try {
-    const customers = await CustomerModel.findByPhone(phone);
-    if (!customers || customers.length === 0) {
-      throw new Error("Không tìm thấy khách hàng");
-    }
-    // findByPhone hiện tại trả về mảng, nếu bạn mong đợi một khách hàng duy nhất, bạn có thể trả về phần tử đầu tiên
-    return customers;
+    const customers = await CustomerModel.findByPhone(phone, skip, limit);
+    const total = await CustomerModel.countByPhone(phone);
+    return { customers, total };
   } catch (error) {
     console.error(
       "Lỗi trong Search Service (getCustomerByPhone):",
@@ -86,5 +83,3 @@ exports.getProductsByName = async (name, limit, skip) => {
     throw error;
   }
 };
-
-

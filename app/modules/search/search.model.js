@@ -1,7 +1,7 @@
 const db = require("../../config/db.config");
 
 const CustomerModel = {
-  findByPhone: async (phone) => {
+  findByPhone: async (phone, skip, limit) => {
     const query = `
       SELECT
         customer_id,
@@ -9,11 +9,14 @@ const CustomerModel = {
         phone
       FROM customers
       WHERE phone LIKE ?
+      LIMIT ? OFFSET ?
     `;
     const searchTerm = `${phone}%`;
 
     try {
-      const [results] = await db.promise().query(query, [searchTerm]);
+      const [results] = await db
+        .promise()
+        .query(query, [searchTerm, limit, skip]);
       return results.map((row) => ({
         customer_id: row.customer_id,
         customer_name: row.customer_name,
@@ -21,7 +24,27 @@ const CustomerModel = {
       }));
     } catch (error) {
       console.error(
-        "Lỗi khi tìm khách hàng theo số điện thoại gần đúng:",
+        "Lỗi khi tìm khách hàng theo số điện thoại (có pagination):",
+        error.message
+      );
+      throw error;
+    }
+  },
+
+  countByPhone: async (phone) => {
+    const query = `
+      SELECT COUNT(*) AS total
+      FROM customers
+      WHERE phone LIKE ?
+    `;
+    const searchTerm = `${phone}%`;
+
+    try {
+      const [results] = await db.promise().query(query, [searchTerm]);
+      return results[0].total;
+    } catch (error) {
+      console.error(
+        "Lỗi khi đếm khách hàng theo số điện thoại:",
         error.message
       );
       throw error;
