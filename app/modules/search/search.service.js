@@ -7,7 +7,7 @@ exports.getCustomerByPhone = async (phone) => {
       throw new Error("Không tìm thấy khách hàng");
     }
     // findByPhone hiện tại trả về mảng, nếu bạn mong đợi một khách hàng duy nhất, bạn có thể trả về phần tử đầu tiên
-    return customers[0];
+    return customers;
   } catch (error) {
     console.error("Lỗi trong Search Service (getCustomerByPhone):", error.message);
     throw error;

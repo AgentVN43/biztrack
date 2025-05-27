@@ -14,7 +14,11 @@ const CustomerModel = {
 
     try {
       const [results] = await db.promise().query(query, [searchTerm]);
-      return results.map((row) => ({ customer_id: row.customer_id }));
+      return results.map((row) => ({
+        customer_id: row.customer_id,
+        customer_name: row.customer_name,
+        phone: row.phone,
+      }));
     } catch (error) {
       console.error(
         "Lỗi khi tìm khách hàng theo số điện thoại gần đúng:",
