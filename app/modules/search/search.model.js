@@ -41,8 +41,8 @@ const OrderModel = {
   //     throw error;
   //   }
   // },
-
-  findByCustomerId: async (customerId, skip, limit) => {
+  // Xịn ko phân trang
+  findByCustomerId: async (customerId) => {
     const sql = `
       SELECT
         orders.*,
@@ -51,19 +51,10 @@ const OrderModel = {
       LEFT JOIN customers ON orders.customer_id = customers.customer_id
       WHERE orders.customer_id = ?
       ORDER BY orders.order_date DESC
-      LIMIT ?, ?
     `;
-    const countSql = `
-      SELECT COUNT(*) AS total
-      FROM orders
-      WHERE customer_id = ?
-    `;
+
     try {
-      const [results] = await db
-        .promise()
-        .query(sql, [customerId, skip, limit]);
-      const [countResult] = await db.promise().query(countSql, [customerId]);
-      const total = countResult[0].total;
+      const [results] = await db.promise().query(sql, [customerId]);
 
       // Định dạng lại kết quả
       const formattedResults = results.map((order) => ({
@@ -86,7 +77,7 @@ const OrderModel = {
           customer_name: order.customer_name || "Khách lẻ",
         },
       }));
-      return { orders: formattedResults, total: total };
+      return { orders: formattedResults, total: formattedResults.length };
     } catch (error) {
       console.error(
         "Lỗi khi tìm đơn hàng theo customer ID (có phân trang):",
@@ -133,7 +124,7 @@ const ProductModel = {
     try {
       const [products] = await db
         .promise()
-        .query(sql, [searchValue, limit, skip ]);
+        .query(sql, [searchValue, limit, skip]);
       const [countResult] = await db.promise().query(countSql, [searchValue]);
       const total = countResult[0].total;
       return { products, total };

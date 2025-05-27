@@ -4,7 +4,7 @@ const createResponse = require("../../utils/response"); // Đảm bảo đườn
 const getPaginationParams = (req) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
-  const skip = (page - 1) * limit;
+  const skip = (parseInt(page) - 1) * parseInt(limit);
   return { page, skip, limit };
 };
 
@@ -37,6 +37,7 @@ exports.searchOrdersByPhone = async (req, res) => {
       skip,
       limit
     );
+    console.log("Total orders:", total);
     return createResponse(res, 200, true, orders, null, total, page, limit);
   } catch (error) {
     return createResponse(res, 404, false, null, error.message);

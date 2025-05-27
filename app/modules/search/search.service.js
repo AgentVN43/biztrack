@@ -40,6 +40,7 @@ exports.getCustomerByPhone = async (phone) => {
 //     throw error;
 //   }
 // };
+
 exports.getOrdersByCustomerPhone = async (partialPhone, skip, limit) => {
   try {
     const customers = await CustomerModel.findByPhone(partialPhone);
@@ -49,22 +50,17 @@ exports.getOrdersByCustomerPhone = async (partialPhone, skip, limit) => {
     }
 
     let allOrders = [];
-    let totalOrders = 0;
 
     for (const customer of customers) {
-      const result = await OrderModel.findByCustomerId(
-        customer.customer_id,
-        skip,
-        limit // Chúng ta sẽ phân trang *tất cả* đơn hàng tìm thấy, không theo từng khách hàng
+      const ordersResult = await OrderModel.findByCustomerId(
+        customer.customer_id
       );
-      allOrders = [...allOrders, ...result.orders];
-      totalOrders += result.total; // Cộng dồn tổng số đơn hàng (có thể không chính xác lắm theo logic này)
-      // Lưu ý: Logic tính tổng số đơn hàng ở đây có thể cần điều chỉnh
-      // tùy thuộc vào yêu cầu cụ thể của bạn về việc phân trang kết quả.
+      allOrders.push(...ordersResult.orders);
     }
 
-    console.log("This is allOrders:", allOrders);
-    return { orders: allOrders, total: totalOrders };
+    const totalOverallOrders = allOrders.length;
+    const paginatedOrders = allOrders.slice(skip, skip + limit);
+    return { orders: paginatedOrders, total: totalOverallOrders };
   } catch (error) {
     console.error(
       "Lỗi trong Search Service (getOrdersByCustomerPhone):",
@@ -90,3 +86,5 @@ exports.getProductsByName = async (name, limit, skip) => {
     throw error;
   }
 };
+
+
