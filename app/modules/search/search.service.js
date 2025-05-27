@@ -27,7 +27,7 @@ exports.getOrdersByCustomerPhone = async (partialPhone) => {
       const orders = await OrderModel.findByCustomerId(customer.customer_id);
       allOrders.push(...orders);
     }
-
+    console.log("This is allOrders:",allOrders)
     return allOrders;
   } catch (error) {
     console.error("Lỗi trong Search Service (getOrdersByCustomerPhone):", error.message);
