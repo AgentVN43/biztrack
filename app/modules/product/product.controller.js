@@ -1,4 +1,6 @@
 const ProductService = require("./product.service");
+const paginate = require("../../middlewares/paginate");
+
 
 exports.getAllProducts = async (req, res, next) => {
   try {

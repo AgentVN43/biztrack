@@ -1,6 +1,6 @@
 const SearchService = require("./search.service");
 
-exports.searchCustomerByPhone = (req, res) => {
+exports.searchCustomerByPhone = async (req, res) => {
   const { phone } = req.query;
 
   if (!phone) {
@@ -10,22 +10,21 @@ exports.searchCustomerByPhone = (req, res) => {
     });
   }
 
-  SearchService.getCustomerByPhone(phone, (error, customer) => {
-    if (error) {
-      return res.status(404).json({
-        success: false,
-        error: error.message,
-      });
-    }
-
+  try {
+    const customer = await SearchService.getCustomerByPhone(phone);
     return res.json({
       success: true,
       data: customer,
     });
-  });
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+      error: error.message,
+    });
+  }
 };
 
-exports.searchOrdersByPhone = (req, res) => {
+exports.searchOrdersByPhone = async (req, res) => {
   const { phone } = req.query;
 
   if (!phone) {
@@ -34,15 +33,15 @@ exports.searchOrdersByPhone = (req, res) => {
       .json({ success: false, error: "Số điện thoại là bắt buộc" });
   }
 
-  SearchService.getOrdersByCustomerPhone(phone, (error, orders) => {
-    if (error) {
-      return res.status(404).json({ success: false, error: error.message });
-    }
+  try {
+    const orders = await SearchService.getOrdersByCustomerPhone(phone);
     return res.json({ success: true, data: orders });
-  });
+  } catch (error) {
+    return res.status(404).json({ success: false, error: error.message });
+  }
 };
 
-exports.searchProductsByName = (req, res) => {
+exports.searchProductsByName = async (req, res) => {
   const { name } = req.query;
 
   if (!name) {
@@ -52,17 +51,16 @@ exports.searchProductsByName = (req, res) => {
     });
   }
 
-  SearchService.getProductsByName(name, (error, products) => {
-    if (error) {
-      return res.status(500).json({
-        success: false,
-        error: error.message,
-      });
-    }
-
+  try {
+    const products = await SearchService.getProductsByName(name);
     return res.json({
       success: true,
       data: products,
     });
-  });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
 };

@@ -1,12 +1,13 @@
 const db = require("../../config/db.config");
-const { v4: uuidv4 } = require("uuid"); 
+const { v4: uuidv4 } = require("uuid");
 
 const ProductModel = {
   /**
    * Lấy tất cả sản phẩm.
    * @returns {Promise<Array<Object>>} Promise giải quyết với danh sách sản phẩm.
    */
-  getAllProducts: () => {
+
+   getAllProducts: () => {
     return new Promise((resolve, reject) => {
       const sql = `
         SELECT 

@@ -161,8 +161,8 @@ exports.create = async (req, res, next) => {
     const invoiceData = {
       invoice_code: `INV-PO-${Date.now()}`, // Tự động sinh mã invoice cho PO
       invoice_type: "purchase_invoice",
-      order_id: null, // Không có order_id cho hóa đơn mua hàng
-      purchase_order_id: purchaseOrderResult.po_id, // Liên kết với PO
+      order_id: purchaseOrderResult.po_id, // Không có order_id cho hóa đơn mua hàng
+      // purchase_order_id: purchaseOrderResult.po_id, // Liên kết với PO
       supplier_id: purchaseOrderResult.supplier_id, // Lấy từ PO đã tạo
       total_amount: purchaseOrderResult.total_amount,
       tax_amount: 0, // Cần tính toán nếu có thuế

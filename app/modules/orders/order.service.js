@@ -818,11 +818,24 @@ const OrderService = {
    * Đọc tất cả các đơn hàng.
    * @returns {Promise<Array<Object>>} Promise giải quyết với danh sách đơn hàng.
    */
-  read: async () => {
-    // ✅ Chuyển sang async
+  // read: async () => {
+  //   // ✅ Chuyển sang async
+  //   try {
+  //     const orders = await OrderModel.read(); // ✅ Sử dụng await
+  //     return orders;
+  //   } catch (error) {
+  //     console.error("🚀 ~ order.service.js: read - Lỗi:", error);
+  //     throw error;
+  //   }
+  // },
+
+  read: async (page = 1, limit = 3) => {
+    // Hàm này giờ nhận page và limit với giá trị mặc định
+    const skip = (page - 1) * limit;
     try {
-      const orders = await OrderModel.read(); // ✅ Sử dụng await
-      return orders;
+      // Gọi Model và nhận cả dữ liệu và tổng số lượng
+      const { data, total } = await OrderModel.read(skip, limit);
+      return { data, total }; // Trả về cả hai
     } catch (error) {
       console.error("🚀 ~ order.service.js: read - Lỗi:", error);
       throw error;

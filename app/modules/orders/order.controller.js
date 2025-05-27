@@ -224,6 +224,7 @@
 const OrderService = require("./order.service");
 const OrderDetailService = require("../orderDetails/orderDetail.service"); // Cần import OrderDetailService
 const Inventory = require("../inventories/inventory.service"); // Cần import InventoryService
+const { paginateResponse } = require("../../utils/pagination");
 // const TransactionService = require("../transactions/transaction.service"); // Không trực tiếp dùng trong controller này
 // const Product = require("../../controllers/product.controller"); // Không trực tiếp dùng trong controller này
 // const { handleResult } = require("../../utils/responseHelper"); // Không cần thiết nữa
@@ -288,14 +289,33 @@ const OrderController = {
    * @param {Object} res - Đối tượng Response.
    * @param {Function} next - Hàm middleware tiếp theo.
    */
+  // read: async (req, res, next) => {
+  //   // ✅ Chuyển sang async
+  //   try {
+  //     const orders = await OrderService.read(); // ✅ Sử dụng await
+  //     res.status(200).json({ success: true, data: orders });
+  //   } catch (err) {
+  //     console.error("🚀 ~ order.controller.js: read - Lỗi:", err);
+  //     next(err);
+  //   }
+  // },
+
   read: async (req, res, next) => {
-    // ✅ Chuyển sang async
+    const page = parseInt(req.query.page) || 1; // Lấy page từ query, mặc định là 1
+    const limit = parseInt(req.query.limit) || 3; // Lấy limit từ query, mặc định là 10
+
     try {
-      const orders = await OrderService.read(); // ✅ Sử dụng await
-      res.status(200).json({ success: true, data: orders });
+      // Gọi Service và nhận cả dữ liệu và tổng số lượng
+      const { data: orders, total: totalOrders } = await OrderService.read(
+        page,
+        limit
+      );
+
+      // Sử dụng hàm tiện ích để định dạng phản hồi JSON
+      res.status(200).json(paginateResponse(orders, totalOrders, page, limit));
     } catch (err) {
       console.error("🚀 ~ order.controller.js: read - Lỗi:", err);
-      next(err);
+      next(err); // Chuyển lỗi xuống middleware xử lý lỗi
     }
   },
 

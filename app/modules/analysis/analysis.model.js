@@ -606,22 +606,46 @@ const AnalysisModel = {
     }
   },
 
+  // async getReceivableOrders() {
+  //   try {
+  //     const query = `
+  //       SELECT
+  //         i.invoice_id,
+  //         i.invoice_code,
+  //         i.order_id,
+  //         i.final_amount,
+  //         i.status AS invoice_status,
+  //         o.order_code,
+  //         o.order_date,
+  //         o.order_status
+  //       FROM invoices i
+  //       LEFT JOIN orders o ON i.order_id = o.order_id
+  //       WHERE i.invoice_type = 'sale_invoice'
+  //         AND i.status NOT IN ('paid', 'cancelled')
+  //         AND o.order_status IN ('Mới', 'Xác nhận')
+  //     `;
+  //     const [results] = await db.promise().query(query);
+  //     return results;
+  //   } catch (error) {
+  //     console.error("Lỗi ở Model khi lấy danh sách order phải thu:", error);
+  //     throw error;
+  //   }
+  // },
+
   async getReceivableOrders() {
     try {
       const query = `
         SELECT
-          i.invoice_id,
-          i.invoice_code,
-          i.order_id,
-          i.final_amount,
-          i.status AS invoice_status,
+          o.order_id,
           o.order_code,
           o.order_date,
-          o.order_status
-        FROM invoices i
-        LEFT JOIN orders o ON i.order_id = o.order_id
-        WHERE i.invoice_type = 'sale_invoice'
-          AND i.status NOT IN ('paid', 'cancelled')
+          o.order_status,
+          o.final_amount, -- Lấy final_amount trực tiếp từ bảng orders
+          o.customer_id,
+          c.customer_name
+        FROM orders o
+        LEFT JOIN customers c ON o.customer_id = c.customer_id -- Join với customers để lấy tên khách hàng
+        WHERE o.order_status IN ('Mới', 'Xác nhận') -- ✅ Chỉ lọc theo order_status
       `;
       const [results] = await db.promise().query(query);
       return results;
@@ -631,18 +655,47 @@ const AnalysisModel = {
     }
   },
 
+  // async getPayablePurchaseOrders() {
+  //   try {
+  //     const query = `
+  //       SELECT
+  //         i.invoice_id,
+  //         i.invoice_code,
+  //         i.supplier_id,
+  //         i.total_amount AS purchase_amount,
+  //         i.status AS invoice_status
+  //       FROM invoices i
+  //       WHERE i.invoice_type = 'purchase_invoice'
+  //         AND i.status NOT IN ('paid', 'cancelled')
+  //     `;
+  //     const [results] = await db.promise().query(query);
+  //     return results;
+  //   } catch (error) {
+  //     console.error(
+  //       "Lỗi ở Model khi lấy danh sách purchase order phải trả:",
+  //       error
+  //     );
+  //     throw error;
+  //   }
+  // },
+
   async getPayablePurchaseOrders() {
     try {
       const query = `
         SELECT
           i.invoice_id,
           i.invoice_code,
-          i.supplier_id,
-          i.total_amount AS purchase_amount,
-          i.status AS invoice_status
+          i.total_amount AS invoice_amount,
+          i.status AS invoice_status,
+          po.po_id,
+          po.supplier_name,
+          po.created_at AS po_date,
+          po.status AS po_status
         FROM invoices i
+        LEFT JOIN purchase_orders po ON i.order_id = po.po_id -- Join với purchase_orders
         WHERE i.invoice_type = 'purchase_invoice'
           AND i.status NOT IN ('paid', 'cancelled')
+          AND po.status = 'posted' -- Chỉ lấy các PO đã được duyệt/posted
       `;
       const [results] = await db.promise().query(query);
       return results;

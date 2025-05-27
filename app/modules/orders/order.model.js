@@ -1026,23 +1026,82 @@ const OrderModel = {
    * Phương thức đọc tất cả các đơn hàng đang hoạt động.
    * @returns {Promise<Array<Object>>} Promise giải quyết với danh sách đơn hàng.
    */
-  read: async () => {
-    // ✅ Chuyển sang async
-    const query = `
-    SELECT 
-      orders.*,
-      customers.customer_name
-    FROM orders
-    LEFT JOIN customers ON orders.customer_id = customers.customer_id
-    WHERE is_active = 1
-    ORDER BY 
-      COALESCE(orders.updated_at, orders.created_at) DESC
+  // read: async () => {
+  //   // ✅ Chuyển sang async
+  //   const query = `
+  //   SELECT
+  //     orders.*,
+  //     customers.customer_name
+  //   FROM orders
+  //   LEFT JOIN customers ON orders.customer_id = customers.customer_id
+  //   WHERE is_active = 1
+  //   ORDER BY
+  //     COALESCE(orders.updated_at, orders.created_at) DESC
+  //   `;
+
+  //   try {
+  //     const [results] = await db.promise().query(query); // ✅ Sử dụng db.promise().query
+
+  //     // Định dạng lại kết quả để dễ sử dụng ở frontend
+  //     const formattedResults = results.map((order) => ({
+  //       order_id: order.order_id,
+  //       order_code: order.order_code,
+  //       order_date: order.order_date,
+  //       order_status: order.order_status,
+  //       shipping_address: order.shipping_address,
+  //       shipping_fee: order.shipping_fee,
+  //       payment_method: order.payment_method,
+  //       note: order.note,
+  //       total_amount: order.total_amount,
+  //       discount_amount: order.discount_amount,
+  //       final_amount: order.final_amount,
+  //       created_at: order.created_at,
+  //       updated_at: order.updated_at,
+  //       warehouse_id: order.warehouse_id,
+  //       // Gom nhóm thông tin khách hàng vào một object riêng
+  //       customer: {
+  //         customer_id: order.customer_id,
+  //         customer_name: order.customer_name || "Khách lẻ", // Tên mặc định nếu không có
+  //       },
+  //     }));
+  //     return formattedResults;
+  //   } catch (error) {
+  //     console.error("Lỗi khi đọc tất cả đơn hàng:", error.message);
+  //     throw error;
+  //   }
+  // },
+
+  read: async (skip, limit) => {
+    const baseQuery = `
+      SELECT
+        orders.*,
+        customers.customer_name
+      FROM orders
+      LEFT JOIN customers ON orders.customer_id = customers.customer_id
+      WHERE is_active = 1
+      ORDER BY
+        COALESCE(orders.updated_at, orders.created_at) DESC
+    `;
+
+    const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM orders
+      WHERE is_active = 1
     `;
 
     try {
-      const [results] = await db.promise().query(query); // ✅ Sử dụng db.promise().query
+      const [countResults] = await db.promise().query(countQuery);
+      const total = countResults[0].total;
 
-      // Định dạng lại kết quả để dễ sử dụng ở frontend
+      const paginatedDataQuery = `
+        ${baseQuery}
+        LIMIT ?, ?
+      `;
+      console.log("Skip:", skip, "Limit:", limit);
+      const [results] = await db
+        .promise()
+        .query(paginatedDataQuery, [skip, limit]);
+      console.log("Raw Results:", results);
       const formattedResults = results.map((order) => ({
         order_id: order.order_id,
         order_code: order.order_code,
@@ -1058,15 +1117,14 @@ const OrderModel = {
         created_at: order.created_at,
         updated_at: order.updated_at,
         warehouse_id: order.warehouse_id,
-        // Gom nhóm thông tin khách hàng vào một object riêng
         customer: {
           customer_id: order.customer_id,
-          customer_name: order.customer_name || "Khách lẻ", // Tên mặc định nếu không có
+          customer_name: order.customer_name || "Khách lẻ",
         },
       }));
-      return formattedResults;
+      return { data: formattedResults, total: total };
     } catch (error) {
-      console.error("Lỗi khi đọc tất cả đơn hàng:", error.message);
+      console.error("Lỗi khi đọc tất cả đơn hàng (Model):", error.message);
       throw error;
     }
   },

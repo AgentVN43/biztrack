@@ -36,7 +36,7 @@ const AnalysisController = {
   async getOutstandingDebt(req, res) {
     try {
       const outstandingAmount = await AnalysisService.getOutstandingDebt();
-      res.json({ total_debt: outstandingAmount });
+      res.json({ total_money: outstandingAmount });
     } catch (error) {
       console.error("Lỗi khi lấy thống kê công nợ:", error);
       res.status(500).json({ message: "Lỗi khi lấy thống kê công nợ" });

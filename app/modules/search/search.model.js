@@ -1,33 +1,55 @@
 const db = require("../../config/db.config");
 
 const CustomerModel = {
-  findByPhone: (phone, callback) => {
-    const sql = "SELECT * FROM customers WHERE phone = ?";
-    db.query(sql, [phone], (error, rows) => {
-      if (error) return callback(error, null);
-      return callback(null, rows[0]); // trả về khách hàng nếu có
-    });
+  findByPhone: async (phone) => {
+    const query = `
+      SELECT
+        customer_id,
+        customer_name,
+        phone
+      FROM customers
+      WHERE phone LIKE ?
+    `;
+    const searchTerm = `${phone}%`;
+
+    try {
+      const [results] = await db.promise().query(query, [searchTerm]);
+      return results.map((row) => ({ customer_id: row.customer_id }));
+    } catch (error) {
+      console.error(
+        "Lỗi khi tìm khách hàng theo số điện thoại gần đúng:",
+        error.message
+      );
+      throw error;
+    }
   },
 };
 
 const OrderModel = {
-  findByCustomerId: (customerId, callback) => {
-    const sql = "SELECT * FROM orders WHERE customer_id = ? ORDER BY order_date DESC";
-    db.query(sql, [customerId], (error, rows) => {
-      if (error) return callback(error, null);
-      return callback(null, rows); // trả về danh sách đơn hàng
-    });
+  findByCustomerId: async (customerId) => {
+    const sql =
+      "SELECT * FROM orders WHERE customer_id = ? ORDER BY order_date DESC";
+    try {
+      const [rows] = await db.promise().query(sql, [customerId]);
+      return rows;
+    } catch (error) {
+      console.error("Lỗi khi tìm đơn hàng theo customer ID:", error.message);
+      throw error;
+    }
   },
 };
 
 const ProductModel = {
-  findByName: (productName, callback) => {
+  findByName: async (productName) => {
     const sql = "SELECT * FROM products WHERE product_name LIKE ?";
     const searchValue = `%${productName}%`;
-    db.query(sql, [searchValue], (error, rows) => {
-      if (error) return callback(error, null);
-      return callback(null, rows);
-    });
+    try {
+      const [rows] = await db.promise().query(sql, [searchValue]);
+      return rows;
+    } catch (error) {
+      console.error("Lỗi khi tìm sản phẩm theo tên:", error.message);
+      throw error;
+    }
   },
 };
 
