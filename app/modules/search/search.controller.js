@@ -1,66 +1,68 @@
 const SearchService = require("./search.service");
+const createResponse = require("../../utils/response"); // Đảm bảo đường dẫn đúng
+
+const getPaginationParams = (req) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+  return { page, skip, limit };
+};
 
 exports.searchCustomerByPhone = async (req, res) => {
   const { phone } = req.query;
 
   if (!phone) {
-    return res.status(400).json({
-      success: false,
-      error: "Số điện thoại là bắt buộc",
-    });
+    return createResponse(res, 400, false, null, "Số điện thoại là bắt buộc");
   }
 
   try {
     const customer = await SearchService.getCustomerByPhone(phone);
-    return res.json({
-      success: true,
-      data: customer,
-    });
+    return createResponse(res, 200, true, customer);
   } catch (error) {
-    return res.status(404).json({
-      success: false,
-      error: error.message,
-    });
+    return createResponse(res, 404, false, null, error.message);
   }
 };
 
 exports.searchOrdersByPhone = async (req, res) => {
   const { phone } = req.query;
+  const { page, skip, limit } = getPaginationParams(req);
 
   if (!phone) {
-    return res
-      .status(400)
-      .json({ success: false, error: "Số điện thoại là bắt buộc" });
+    return createResponse(res, 400, false, null, "Số điện thoại là bắt buộc");
   }
 
   try {
-    const orders = await SearchService.getOrdersByCustomerPhone(phone);
-    return res.json({ success: true, data: orders });
+    const { orders, total } = await SearchService.getOrdersByCustomerPhone(
+      phone,
+      skip,
+      limit
+    );
+    return createResponse(res, 200, true, orders, null, total, page, limit);
   } catch (error) {
-    return res.status(404).json({ success: false, error: error.message });
+    return createResponse(res, 404, false, null, error.message);
   }
 };
 
 exports.searchProductsByName = async (req, res) => {
   const { name } = req.query;
+  const { page, skip, limit } = getPaginationParams(req);
+
+  // const page = parseInt(req.query.page) || 1;
+  // const limit = parseInt(req.query.limit) || 10;
+  // const skip = (page - 1) * limit;
 
   if (!name) {
-    return res.status(400).json({
-      success: false,
-      error: "Tên sản phẩm là bắt buộc",
-    });
+    return createResponse(res, 400, false, null, "Tên sản phẩm là bắt buộc");
   }
 
   try {
-    const products = await SearchService.getProductsByName(name);
-    return res.json({
-      success: true,
-      data: products,
-    });
+    const { products, total } = await SearchService.getProductsByName(
+      name,
+      limit,
+      skip
+    );
+    return createResponse(res, 200, true, products, null, total, page, limit);
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      error: error.message,
-    });
+    return createResponse(res, 500, false, null, error.message);
   }
 };

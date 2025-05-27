@@ -635,23 +635,23 @@ const AnalysisModel = {
   async getReceivableOrders() {
     try {
       const query = `
-        SELECT
-          o.order_id,
-          o.order_code,
-          o.order_date,
-          o.order_status,
-          o.final_amount, -- Lấy final_amount trực tiếp từ bảng orders
-          o.customer_id,
-          c.customer_name
-        FROM orders o
-        LEFT JOIN customers c ON o.customer_id = c.customer_id -- Join với customers để lấy tên khách hàng
-        WHERE o.order_status IN ('Mới', 'Xác nhận') -- ✅ Chỉ lọc theo order_status
-      `;
+      SELECT
+        o.order_id,
+        o.order_code,
+        o.order_date,
+        o.order_status,
+        o.final_amount, -- Lấy final_amount trực tiếp từ bảng orders
+        o.customer_id,
+        c.customer_name
+      FROM orders o
+      LEFT JOIN customers c ON o.customer_id = c.customer_id -- Join với customers để lấy tên khách hàng
+      WHERE o.order_status IN ('Mới', 'Xác nhận') -- ✅ Chỉ lọc theo order_status
+    `;
       const [results] = await db.promise().query(query);
-      return results;
+      return results; // Trả về trực tiếp mảng kết quả
     } catch (error) {
       console.error("Lỗi ở Model khi lấy danh sách order phải thu:", error);
-      throw error;
+      throw error; // Ném lỗi để Service/Controller xử lý
     }
   },
 

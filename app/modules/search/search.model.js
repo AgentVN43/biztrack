@@ -41,7 +41,8 @@ const OrderModel = {
   //     throw error;
   //   }
   // },
-  findByCustomerId: async (customerId) => {
+
+  findByCustomerId: async (customerId, skip, limit) => {
     const sql = `
       SELECT
         orders.*,
@@ -50,11 +51,21 @@ const OrderModel = {
       LEFT JOIN customers ON orders.customer_id = customers.customer_id
       WHERE orders.customer_id = ?
       ORDER BY orders.order_date DESC
+      LIMIT ?, ?
+    `;
+    const countSql = `
+      SELECT COUNT(*) AS total
+      FROM orders
+      WHERE customer_id = ?
     `;
     try {
-      const [results] = await db.promise().query(sql, [customerId]);
+      const [results] = await db
+        .promise()
+        .query(sql, [customerId, skip, limit]);
+      const [countResult] = await db.promise().query(countSql, [customerId]);
+      const total = countResult[0].total;
 
-      // Định dạng lại kết quả để dễ sử dụng ở frontend, giống như OrderModel.read
+      // Định dạng lại kết quả
       const formattedResults = results.map((order) => ({
         order_id: order.order_id,
         order_code: order.order_code,
@@ -71,27 +82,66 @@ const OrderModel = {
         updated_at: order.updated_at,
         warehouse_id: order.warehouse_id,
         customer: {
-          customer_id: order.customer_id, // customer_id vẫn nằm trong orders.*
-          customer_name: order.customer_name || "Khách lẻ", // Tên mặc định nếu không có
+          customer_id: order.customer_id,
+          customer_name: order.customer_name || "Khách lẻ",
         },
       }));
-      return formattedResults;
+      return { orders: formattedResults, total: total };
     } catch (error) {
-      console.error("Lỗi khi tìm đơn hàng theo customer ID:", error.message);
+      console.error(
+        "Lỗi khi tìm đơn hàng theo customer ID (có phân trang):",
+        error.message
+      );
       throw error;
     }
   },
 };
 
+// const ProductModel = {
+//   findByName: async (productName) => {
+//     const sql = "SELECT * FROM products WHERE product_name LIKE ?";
+//     const searchValue = `%${productName}%`;
+
+//     try {
+//       const [rows] = await db.promise().query(sql, [searchValue]);
+//       return rows;
+//     } catch (error) {
+//       console.error("Lỗi khi tìm sản phẩm theo tên:", error.message);
+//       throw error;
+//     }
+//   },
+// };
+
 const ProductModel = {
-  findByName: async (productName) => {
-    const sql = "SELECT * FROM products WHERE product_name LIKE ?";
+  findByName: async (productName, limit, skip) => {
+    const sql = `
+      SELECT
+        product_id, product_name, product_desc, product_image,
+        product_retail_price, product_note, product_barcode,
+        sku, is_active, category_id
+      FROM products
+      WHERE product_name LIKE ?
+      LIMIT ? OFFSET ?
+    `;
+    const countSql = `
+      SELECT COUNT(*) AS total
+      FROM products
+      WHERE product_name LIKE ?
+    `;
     const searchValue = `%${productName}%`;
+
     try {
-      const [rows] = await db.promise().query(sql, [searchValue]);
-      return rows;
+      const [products] = await db
+        .promise()
+        .query(sql, [searchValue, limit, skip ]);
+      const [countResult] = await db.promise().query(countSql, [searchValue]);
+      const total = countResult[0].total;
+      return { products, total };
     } catch (error) {
-      console.error("Lỗi khi tìm sản phẩm theo tên:", error.message);
+      console.error(
+        "Lỗi khi tìm sản phẩm theo tên (có phân trang):",
+        error.message
+      );
       throw error;
     }
   },

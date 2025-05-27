@@ -1,3 +1,4 @@
+const createResponse = require("../../utils/response");
 const AnalysisService = require("./analysis.service");
 
 const AnalysisController = {
@@ -43,13 +44,23 @@ const AnalysisController = {
     }
   },
 
-  async getReceivableOrders(req, res) {
+  // async getReceivableOrders(req, res) {
+  //   try {
+  //     const receivableOrders = await AnalysisService.getReceivableOrders();
+  //     res.status(200).json({ success: true, data: receivableOrders || [] });
+  //   } catch (error) {
+  //     console.error("Lỗi khi lấy danh sách order phải thu:", error);
+  //     res.status(500).json({ success: false, error: error.message });
+  //   }
+  // },
+
+  async getReceivableOrders(req, res, next) {
     try {
-      const receivableOrders = await AnalysisService.getReceivableOrders();
-      res.json(receivableOrders);
+      const orders = await AnalysisService.getReceivableOrders();
+      return createResponse(res, 200, true, orders);
     } catch (error) {
-      console.error("Lỗi khi lấy danh sách order phải thu:", error);
-      res.status(500).json({ message: "Lỗi khi lấy danh sách order phải thu" });
+      console.error("Lỗi ở Controller...", error);
+      return createResponse(res, 500, false, null, error.message);
     }
   },
 
