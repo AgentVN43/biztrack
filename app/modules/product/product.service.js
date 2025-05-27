@@ -1,15 +1,19 @@
-// product.service.js
 const ProductModel = require("../../modules/product/product.model"); // Import ProductModel
 
 const ProductService = {
   /**
-   * Lấy tất cả sản phẩm.
-   * @returns {Promise<Array<Object>>} Promise giải quyết với danh sách sản phẩm.
+   * Lấy tất cả sản phẩm có phân trang.
+   * @param {number} skip - Số lượng bản ghi bỏ qua (offset).
+   * @param {number} limit - Số lượng bản ghi cần lấy (limit).
+   * @returns {Promise<{products: Array<Object>, total: number}>} Promise giải quyết với danh sách sản phẩm và tổng số lượng.
    */
-  getAllProducts: async () => {
+  getAllProducts: async (skip, limit) => {
     try {
-      const products = await ProductModel.getAllProducts();
-      return products;
+      const { products, total } = await ProductModel.getAllProducts(
+        skip,
+        limit
+      );
+      return { products, total };
     } catch (error) {
       console.error("🚀 ~ product.service.js: getAllProducts - Lỗi:", error);
       throw error; // Ném lỗi để controller xử lý
@@ -75,7 +79,7 @@ const ProductService = {
       const result = await ProductModel.deleteProduct(id);
       return result;
     } catch (error) {
-      console.error("� ~ product.service.js: deleteProduct - Lỗi:", error);
+      console.error("🚀 ~ product.service.js: deleteProduct - Lỗi:", error);
       throw error;
     }
   },

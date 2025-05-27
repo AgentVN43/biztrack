@@ -2,7 +2,8 @@ const pingRoutes = require("./ping.routes");
 const authRoutes = require("./auth.routes");
 const userRoutes = require("./user.routes");
 const categoryRoutes = require("./category.routes");
-const productRoutes = require("./product.routes");
+// const productRoutes = require("./product.routes");
+const productRoutes = require("../modules/product/product.routes");
 const warehouseRoutes = require("../modules/warehouse/warehouse.route");
 const purchaseOrderRoutes = require("../modules/purchaseOrder/purchaseOrder.routes");
 const inventoriesRoutes = require("../modules/inventories/inventory.routes");
@@ -31,6 +32,7 @@ module.exports = (app) => {
   app.use("/api/v1/search", searchRoutes);
   app.use("/api/v1/invoices", invoiceRoutes);
   app.use("/api/v1/analysis", analysisRoutes);
+  
 
   // Default route for non-existent endpoints
   app.use("*", (req, res) => {
