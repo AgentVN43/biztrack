@@ -7,7 +7,9 @@ const {
   startOfQuarter,
   endOfQuarter,
   parseISO, // Để phân tích chuỗi YYYY-MM-DD
-  format, // Để định dạng Date object thành chuỗi YYYY-MM-DD
+  format,
+  isWithinInterval,
+  addDays, // Để định dạng Date object thành chuỗi YYYY-MM-DD
 } = require("date-fns");
 
 const AnalysisModel = {
@@ -516,6 +518,57 @@ const AnalysisModel = {
           selectTimePeriod =
             "DATE_FORMAT(i.issued_date, '%Y-%m-%d') AS time_period,";
           orderByClause = "ORDER BY time_period";
+
+          if (startDate?.match(/^\d{4}-\d{2}$/)) {
+            const parsedStartDate = parseISO(`${startDate}-01`);
+            const firstDayOfMonth = startOfMonth(parsedStartDate);
+            const lastDayOfMonth = endOfMonth(parsedStartDate);
+            let currentDate = firstDayOfMonth;
+            const allDays = [];
+
+            while (
+              isWithinInterval(currentDate, {
+                start: firstDayOfMonth,
+                end: lastDayOfMonth,
+              })
+            ) {
+              allDays.push(format(currentDate, "yyyy-MM-dd"));
+              currentDate = addDays(currentDate, 1);
+            }
+
+            const query = `
+            SELECT
+              DATE_FORMAT(i.issued_date, '%Y-%m-%d') AS time_period,
+              SUM(i.final_amount) AS total_revenue
+            FROM invoices i
+            INNER JOIN orders o ON i.order_id = o.order_id
+            WHERE o.order_status = 'Hoàn tất'
+              AND i.invoice_type = 'sale_invoice'
+              AND DATE(i.issued_date) >= ${db.escape(
+                format(firstDayOfMonth, "yyyy-MM-dd")
+              )}
+              AND DATE(i.issued_date) <= ${db.escape(
+                format(lastDayOfMonth, "yyyy-MM-dd")
+              )}
+            GROUP BY DATE(i.issued_date)
+            ORDER BY time_period;
+          `;
+
+            const [revenueResults] = await db.promise().query(query);
+            const revenueMap = new Map(
+              revenueResults.map((item) => [
+                item.time_period,
+                item.total_revenue,
+              ])
+            );
+
+            results = allDays.map((day) => ({
+              time_period: day,
+              total_revenue: revenueMap.get(day) || "0.00",
+            }));
+            return results; // Trả về sớm vì đã xử lý xong trường hợp này
+          }
+
           break;
         case "week":
           groupByClause = "WEEK(i.issued_date, 3)"; // Mode 3: tuần bắt đầu từ thứ Hai, 0-53
@@ -528,6 +581,58 @@ const AnalysisModel = {
           selectTimePeriod =
             'DATE_FORMAT(i.issued_date, "%Y-%m") AS time_period,';
           orderByClause = "ORDER BY time_period";
+
+          if (startDate?.match(/^\d{4}$/)) {
+            // Nếu startDate chỉ là năm
+            const year = startDate;
+            const allMonths = Array.from({ length: 12 }, (_, i) => {
+              const month = (i + 1).toString().padStart(2, "0");
+              return `${year}-${month}`;
+            });
+
+            const query = `
+            SELECT
+              DATE_FORMAT(i.issued_date, '%Y-%m') AS time_period,
+              SUM(i.final_amount) AS total_revenue
+            FROM invoices i
+            INNER JOIN orders o ON i.order_id = o.order_id
+            WHERE o.order_status = 'Hoàn tất'
+              AND i.invoice_type = 'sale_invoice'
+              AND YEAR(i.issued_date) = ${db.escape(year)}
+            GROUP BY DATE_FORMAT(i.issued_date, '%Y-%m')
+            ORDER BY time_period;
+          `;
+
+            const [revenueResults] = await db.promise().query(query);
+            const revenueMap = new Map(
+              revenueResults.map((item) => [
+                item.time_period,
+                item.total_revenue,
+              ])
+            );
+
+            results = allMonths.map((month) => ({
+              time_period: month,
+              total_revenue: revenueMap.get(month) || "0.00",
+            }));
+            return results; // Trả về sớm
+          } else if (startDate?.match(/^\d{4}-\d{2}$/)) {
+            // Nếu startDate là năm-tháng (logic mặc định cho month)
+            const query = `
+            SELECT
+              DATE_FORMAT(i.issued_date, '%Y-%m') AS time_period,
+              SUM(i.final_amount) AS total_revenue
+            FROM invoices i
+            INNER JOIN orders o ON i.order_id = o.order_id
+            WHERE o.order_status = 'Hoàn tất'
+              AND i.invoice_type = 'sale_invoice'
+              AND DATE_FORMAT(i.issued_date, '%Y-%m') = ${db.escape(startDate)}
+            GROUP BY DATE_FORMAT(i.issued_date, '%Y-%m')
+            ORDER BY time_period;
+          `;
+            const [queryResults] = await db.promise().query(query);
+            results = queryResults;
+          }
           break;
         case "quarter": // Bổ sung trường hợp quý
           groupByClause = "YEAR(i.issued_date), QUARTER(i.issued_date)";

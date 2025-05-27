@@ -9,7 +9,7 @@ router.get("/dashboard/money", AnalysisController.getOutstandingDebt);
 // router.get("/finance/payable_purchase_orders",  AnalysisController.getPayablePurchaseOrders);
 
 // Thống kê Doanh thu & Lợi nhuận
-router.get("/finance/revenue" /* controller function */); // Tổng doanh thu (có thể theo thời gian)
+router.get("/finance/revenue", AnalysisController.getRevenueByTimePeriod); // Tổng doanh thu (có thể theo thời gian)
 // app.get('/api/v1/analysis/finance/revenue/details', /* controller function */); // Báo cáo doanh thu chi tiết
 // app.get('/api/v1/analysis/finance/profit/by-product', /* controller function */); // Báo cáo lợi nhuận theo sản phẩm
 
