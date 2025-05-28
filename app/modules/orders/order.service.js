@@ -829,12 +829,12 @@ const OrderService = {
   //   }
   // },
 
-  read: async (page = 1, limit = 3) => {
+  read: async (page = 1, limit = 10, filters = {}) => {
     // Hàm này giờ nhận page và limit với giá trị mặc định
     const skip = (page - 1) * limit;
     try {
       // Gọi Model và nhận cả dữ liệu và tổng số lượng
-      const { data, total } = await OrderModel.read(skip, limit);
+      const { data, total } = await OrderModel.read(skip, limit, filters);
       return { data, total }; // Trả về cả hai
     } catch (error) {
       console.error("🚀 ~ order.service.js: read - Lỗi:", error);
