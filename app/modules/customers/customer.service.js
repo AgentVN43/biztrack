@@ -71,8 +71,8 @@ exports.createCustomer = async (data) => {
   return await Customer.create(data);
 };
 
-exports.getAllCustomers = async (skip, limit) => {
-  const { customers, total } = await Customer.getAll(skip, limit);
+exports.getAllCustomers = async (skip, limit,filters = {}) => {
+  const { customers, total } = await Customer.getAll(skip, limit,filters);
   return { customers, total };
 };
 

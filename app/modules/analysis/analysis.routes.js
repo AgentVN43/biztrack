@@ -5,8 +5,20 @@ const AnalysisController = require("./analysis.controller");
 
 router.get("/invoices", AnalysisController.getInvoicesWithFilters);
 router.get("/dashboard/money", AnalysisController.getOutstandingDebt);
-// router.get("/finance/receivable_orders",  AnalysisController.getReceivableOrders);
-// router.get("/finance/payable_purchase_orders",  AnalysisController.getPayablePurchaseOrders);
+
+router.get(
+  "/dashboard/customers-new-in-month",
+  AnalysisController.getNewCustomersInCurrentMonth
+);
+
+router.get("/dashboard/total-customers", AnalysisController.getTotalCustomers);
+
+router.get(
+  "/dashboard/products-new-in-month",
+  AnalysisController.getNewProductsInCurrentMonth
+);
+
+router.get("/dashboard/total-products", AnalysisController.getTotalProducts);
 
 // Thống kê Doanh thu & Lợi nhuận
 router.get("/finance/revenue", AnalysisController.getRevenueByTimePeriod); // Tổng doanh thu (có thể theo thời gian)
@@ -29,9 +41,5 @@ router.get("/receivables", AnalysisController.getReceivableOrders); // Báo cáo
 router.get("/payables/purchase", AnalysisController.getPayablePurchaseOrders); // Báo cáo công nợ phải trả (mua hàng)
 // app.get('/api/v1/analysis/receivables/overdue', /* controller function */); // Báo cáo công nợ phải thu quá hạn
 // app.get('/api/v1/analysis/payables/overdue', /* controller function */); // Báo cáo công nợ phải trả quá hạn
-
-// Báo cáo Khách hàng & Nhà cung cấp
-// app.get('/api/v1/analysis/customers', /* controller function */); // Báo cáo khách hàng
-// app.get('/api/v1/analysis/suppliers', /* controller function */); // Báo cáo nhà cung cấp
 
 module.exports = router;

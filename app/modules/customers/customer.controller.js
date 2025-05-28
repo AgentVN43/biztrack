@@ -1,3 +1,4 @@
+const { processDateFilters } = require("../../utils/dateUtils");
 const createResponse = require("../../utils/response");
 const CustomerService = require("./customer.service");
 
@@ -37,11 +38,14 @@ exports.get = async (req, res) => {
   const parsedPage = parseInt(page);
   const parsedLimit = parseInt(limit);
   const skip = (parsedPage - 1) * parsedLimit;
-
+  const { effectiveStartDate, effectiveEndDate } = processDateFilters(
+    req.query
+  );
   try {
     const { customers, total } = await CustomerService.getAllCustomers(
       skip,
-      parsedLimit
+      parsedLimit,
+      { startDate: effectiveStartDate, endDate: effectiveEndDate }
     );
     return createResponse(
       res,

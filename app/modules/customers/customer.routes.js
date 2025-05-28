@@ -10,4 +10,6 @@ router.put('/:id', CustomerController.update);
 router.put('/:id/status', CustomerController.updateStatus);
 router.delete('/:id', CustomerController.delete);
 
+
+
 module.exports = router;

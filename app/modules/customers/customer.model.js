@@ -102,7 +102,8 @@
 //     }
 //   );
 // };
-const db = require("../../config/db.config").promise(); // Đảm bảo bạn đang dùng promise()
+const dbConfig = require("../../config/db.config");
+const db = dbConfig.promise();
 const { v4: uuidv4 } = require("uuid");
 
 exports.create = async (data) => {
@@ -130,15 +131,63 @@ exports.create = async (data) => {
 //   }
 // };
 
-exports.getAll = async (skip, limit) => {
+// exports.getAll = async (skip, limit, filters = {}) => {
+//   try {
+//     const [results] = await db.query("SELECT * FROM customers LIMIT ?, ?", [
+//       skip,
+//       limit,
+//     ]);
+//     const [countResult] = await db.query(
+//       "SELECT COUNT(*) AS total FROM customers"
+//     );
+//     const total = countResult[0].total;
+//     return { customers: results, total: total };
+//   } catch (err) {
+//     console.error("Lỗi khi lấy tất cả khách hàng:", err.message);
+//     throw err;
+//   }
+// };
+
+exports.getAll = async (skip, limit, filters = {}) => {
+  let whereClause = "";
+  const queryParams = [skip, limit];
+
+  if (filters.startDate && filters.endDate) {
+    whereClause += ` WHERE DATE(created_at) BETWEEN DATE(?) AND DATE(?)`;
+    queryParams.unshift(filters.endDate);
+    queryParams.unshift(filters.startDate);
+  } else if (filters.startDate) {
+    whereClause += ` WHERE DATE(created_at) = DATE(?)`;
+    queryParams.unshift(filters.startDate);
+  } else if (filters.endDate) {
+    whereClause += ` WHERE DATE(created_at) <= DATE(?)`;
+    queryParams.unshift(filters.endDate);
+  } else if (filters.year) {
+    whereClause += ` WHERE YEAR(created_at) = ?`;
+    queryParams.unshift(filters.year);
+  } else if (filters.month && filters.year) {
+    whereClause += ` WHERE YEAR(created_at) = ? AND MONTH(created_at) = ?`;
+    queryParams.unshift(filters.year);
+    queryParams.unshift(filters.month);
+  } else if (filters.day && filters.month && filters.year) {
+    whereClause += ` WHERE DATE(created_at) = DATE(?)`;
+    const dateString = `${filters.year}-${String(filters.month).padStart(
+      2,
+      "0"
+    )}-${String(filters.day).padStart(2, "0")}`;
+    queryParams.unshift(dateString);
+  }
+
   try {
-    const [results] = await db.query("SELECT * FROM customers LIMIT ?, ?", [
-      skip,
-      limit,
-    ]);
+    const baseQuery = `SELECT * FROM customers ${whereClause} LIMIT ?, ?`;
+    const countQuery = `SELECT COUNT(*) AS total FROM customers ${whereClause}`;
+
+    const [results] = await db.query(baseQuery, queryParams);
     const [countResult] = await db.query(
-      "SELECT COUNT(*) AS total FROM customers"
+      countQuery,
+      queryParams.slice(0, queryParams.length - 2)
     );
+
     const total = countResult[0].total;
     return { customers: results, total: total };
   } catch (err) {

@@ -1,3 +1,4 @@
+const { getTotalCount } = require("../../utils/dbUtils");
 const createResponse = require("../../utils/response");
 const AnalysisService = require("./analysis.service");
 
@@ -75,6 +76,104 @@ const AnalysisController = {
         .json({ message: "Lỗi khi lấy danh sách purchase order phải trả" });
     }
   },
+
+  async getTotalCustomers(req, res) {
+    try {
+      const total = await getTotalCount("customers");
+      return createResponse(res, 200, true, { total });
+    } catch (error) {
+      console.error("Lỗi khi lấy tổng số khách hàng (Controller):", error);
+      return createResponse(
+        res,
+        500,
+        false,
+        null,
+        "Lỗi khi lấy tổng số khách hàng."
+      );
+    }
+  },
+
+    async getTotalProducts(req, res) {
+    try {
+      const total = await getTotalCount("products");
+      return createResponse(res, 200, true, { total });
+    } catch (error) {
+      console.error("Lỗi khi lấy tổng số khách hàng (Controller):", error);
+      return createResponse(
+        res,
+        500,
+        false,
+        null,
+        "Lỗi khi lấy tổng số khách hàng."
+      );
+    }
+  },
+
+  async getNewCustomersInCurrentMonth(req, res) {
+    try {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1; // Tháng trong JS là 0-11
+
+      const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+      const endDate = `${year}-${String(month).padStart(2, "0")}-${new Date(
+        year,
+        month,
+        0
+      ).getDate()}`;
+
+      const whereClause = `WHERE DATE(created_at) BETWEEN '${startDate}' AND '${endDate}'`;
+      const newCustomersCount = await getTotalCount("customers", whereClause);
+
+      return createResponse(res, 200, true, { newCustomersCount });
+    } catch (error) {
+      console.error(
+        "Lỗi khi lấy khách hàng mới trong tháng (Controller):",
+        error
+      );
+      return createResponse(
+        res,
+        500,
+        false,
+        null,
+        "Lỗi khi lấy khách hàng mới trong tháng."
+      );
+    }
+  },
+
+  async getNewProductsInCurrentMonth(req, res) {
+    try {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+
+      const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+      const endDate = `${year}-${String(month).padStart(2, "0")}-${new Date(
+        year,
+        month,
+        0
+      ).getDate()}`;
+
+      const whereClause = `WHERE DATE(created_at) BETWEEN '${startDate}' AND '${endDate}'`;
+      const newProductsCount = await getTotalCount("products", whereClause);
+
+      return createResponse(res, 200, true, { newProductsCount });
+    } catch (error) {
+      console.error(
+        "Lỗi khi lấy sản phẩm mới trong tháng (Controller):",
+        error
+      );
+      return createResponse(
+        res,
+        500,
+        false,
+        null,
+        "Lỗi khi lấy sản phẩm mới trong tháng."
+      );
+    }
+  },
+
+
 };
 
 module.exports = AnalysisController;
