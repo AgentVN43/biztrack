@@ -40,7 +40,7 @@ exports.getCustomerByPhone = async (phone, skip, limit) => {
 
 exports.getOrdersByCustomerPhone = async (partialPhone, skip, limit) => {
   try {
-    const customers = await CustomerModel.findByPhone(partialPhone);
+    const customers = await CustomerModel.findByPhone(partialPhone, skip, limit);
 
     if (!customers || customers.length === 0) {
       return { orders: [], total: 0 };
