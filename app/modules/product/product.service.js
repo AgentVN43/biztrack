@@ -7,11 +7,12 @@ const ProductService = {
    * @param {number} limit - Số lượng bản ghi cần lấy (limit).
    * @returns {Promise<{products: Array<Object>, total: number}>} Promise giải quyết với danh sách sản phẩm và tổng số lượng.
    */
-  getAllProducts: async (skip, limit) => {
+  getAllProducts: async (skip, limit, filters = {}) => {
     try {
       const { products, total } = await ProductModel.getAllProducts(
         skip,
-        limit
+        limit,
+        filters
       );
       return { products, total };
     } catch (error) {

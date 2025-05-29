@@ -1,16 +1,22 @@
 const ProductService = require("./product.service");
 const createResponse = require("../../utils/response"); // Đảm bảo đường dẫn đúng
 const { paginateResponse } = require("../../utils/pagination"); // Import pagination utilities
+const { processDateFilters } = require("../../utils/dateUtils");
 
 exports.getAllProducts = async (req, res, next) => {
   const { page = 1, limit = 10 } = req.query;
   const parsedPage = parseInt(page);
   const parsedLimit = parseInt(limit);
   const skip = (parsedPage - 1) * parsedLimit;
+  const { effectiveStartDate, effectiveEndDate } = processDateFilters(
+    req.query
+  );
+
   try {
     const { products, total } = await ProductService.getAllProducts(
       skip,
-      parsedLimit
+      parsedLimit,
+      { startDate: effectiveStartDate, endDate: effectiveEndDate }
     ); // Truyền skip, limit vào service
     const responseData = paginateResponse(products, total, page, limit); // Định dạng response với pagination
     res.json(responseData);

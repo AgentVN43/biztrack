@@ -8,21 +8,83 @@ const ProductModel = {
    * @param {number} limit - Số lượng bản ghi cần lấy (limit).
    * @returns {Promise<{products: Array<Object>, total: number}>} Promise giải quyết với danh sách sản phẩm và tổng số lượng.
    */
-  getAllProducts: async (skip, limit) => {
-    try {
-      const sql = `
+  // getAllProducts: async (skip, limit) => {
+  //   try {
+  //     const sql = `
+  //       SELECT
+  //         p.product_id, p.product_name, p.product_desc, p.product_image,
+  //         p.product_retail_price, p.product_note, p.product_barcode,
+  //         p.sku, p.is_active, p.category_id, c.category_name
+  //       FROM products p
+  //       LEFT JOIN categories c ON p.category_id = c.category_id
+  //       LIMIT ?, ?
+  //     `;
+  //     const [products] = await db.query(sql, [skip, limit]); // Truyền skip, limit đúng thứ tự cho OFFSET, LIMIT
+
+  //     const countSql = `SELECT COUNT(*) AS total FROM products`;
+  //     const [countResult] = await db.query(countSql);
+  //     const total = countResult[0].total;
+
+  //     return { products, total };
+  //   } catch (err) {
+  //     console.error("🚀 ~ product.model.js: getAllProducts - Error:", err);
+  //     throw err;
+  //   }
+  // },
+
+  getAllProducts: async (skip, limit, filters = {}) => {
+    const selectClause = `
         SELECT
-          p.product_id, p.product_name, p.product_desc, p.product_image,
-          p.product_retail_price, p.product_note, p.product_barcode,
-          p.sku, p.is_active, p.category_id, c.category_name
+            p.product_id, p.product_name, p.product_desc, p.product_image,
+            p.product_retail_price, p.product_note, p.product_barcode,
+            p.sku, p.is_active, p.category_id, c.category_name, p.created_at
         FROM products p
         LEFT JOIN categories c ON p.category_id = c.category_id
-        LIMIT ?, ?
-      `;
-      const [products] = await db.query(sql, [skip, limit]); // Truyền skip, limit đúng thứ tự cho OFFSET, LIMIT
+    `;
 
-      const countSql = `SELECT COUNT(*) AS total FROM products`;
-      const [countResult] = await db.query(countSql);
+    let whereClause = "";
+    const whereParams = [];
+
+    if (filters.startDate && filters.endDate) {
+      whereClause += ` AND DATE(p.created_at) BETWEEN DATE(?) AND DATE(?)`;
+      whereParams.push(filters.startDate);
+      whereParams.push(filters.endDate);
+    } else if (filters.startDate) {
+      whereClause += ` AND DATE(p.created_at) >= DATE(?)`;
+      whereParams.push(filters.startDate);
+    } else if (filters.endDate) {
+      whereClause += ` AND DATE(p.created_at) <= DATE(?)`;
+      whereParams.push(filters.endDate);
+    }
+
+    const finalWhereClause = whereClause
+      ? `WHERE ${whereClause.substring(5)}`
+      : "";
+    const limitClause = `LIMIT ?, ?`;
+    const limitParams = [skip, limit];
+
+    const sql = `
+        ${selectClause}
+        ${finalWhereClause}
+        ${limitClause}
+    `;
+    const queryParams = [...whereParams, ...limitParams];
+
+    const countSql = `
+        SELECT COUNT(*) AS total
+        FROM products p
+        ${finalWhereClause}
+    `;
+    const countParams = [...whereParams];
+
+    try {
+      console.log("SQL Query:", sql);
+      console.log("Query Params:", queryParams);
+      const [products] = await db.query(sql, queryParams);
+
+      console.log("Count SQL:", countSql);
+      console.log("Count Params:", countParams);
+      const [countResult] = await db.query(countSql, countParams);
       const total = countResult[0].total;
 
       return { products, total };
