@@ -109,6 +109,22 @@ const TransactionService = {
       throw error; // Ném lỗi để được bắt bởi tầng gọi
     }
   },
+
+  getTransactionById: async (transactionId) => {
+    try {
+      const transaction = await TransactionModel.getTransactionById(
+        transactionId
+      );
+      return transaction;
+    } catch (error) {
+      console.error(
+        "🚀 ~ transaction.service.js: getTransactionById - Error:",
+        error
+      );
+      throw error;
+    }
+  },
+
   markAsCancelled: async (related_id) => {
     // Thêm logic nghiệp vụ nếu cần trước khi gọi model
     try {

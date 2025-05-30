@@ -419,7 +419,7 @@ const TransactionModel = {
         !type ||
         amount == null || // Kiểm tra này có thể bỏ lỡ NaN. Cần cân nhắc isNaN(amount)
         !related_type ||
-        !related_id
+        (related_type !== "other" && related_id == null)
       ) {
         const validationError = new Error(
           "Thiếu thông tin bắt buộc để tạo giao dịch hoặc dữ liệu không hợp lệ."
@@ -521,7 +521,23 @@ const TransactionModel = {
     });
   },
 
-  // Các hàm model khác có thể được thêm vào và cũng nên được chuyển đổi sang async/await
+  getTransactionById: (transactionId) => {
+    return new Promise((resolve, reject) => {
+      const query = `
+                SELECT * FROM transactions WHERE transaction_id = ?
+            `;
+      db.query(query, [transactionId], (err, results) => {
+        if (err) {
+          console.error(
+            "🚀 ~ transaction.model.js: getTransactionById - Error:",
+            err
+          );
+          return reject(err);
+        }
+        resolve(results[0]);
+      });
+    });
+  },
 };
 
 module.exports = TransactionModel;
